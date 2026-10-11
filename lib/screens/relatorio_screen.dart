@@ -6,6 +6,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'ajustes_screen.dart';
 
 final _mesAno = DateFormat("MMMM 'de' yyyy", 'pt_BR');
 final _mesNome = DateFormat('MMMM', 'pt_BR');
@@ -40,6 +41,82 @@ double _vendasDoMes(Store store, DateTime mes, {int? ateDia}) => store.lancament
         l.data.month == mes.month &&
         (ateDia == null || l.data.day <= ateDia))
     .fold(0.0, (s, l) => s + l.faturamento);
+
+class RelatorioScreen extends StatefulWidget {
+  final Store store;
+  const RelatorioScreen({super.key, required this.store});
+
+  @override
+  State<RelatorioScreen> createState() => _RelatorioScreenState();
+}
+
+class _RelatorioScreenState extends State<RelatorioScreen> {
+  DateTime _mes = DateTime(DateTime.now().year, DateTime.now().month);
+  bool _voltando = false;
+
+  void _mudarMes(int delta) => setState(() {
+        _voltando = delta < 0;
+        _mes = DateTime(_mes.year, _mes.month + delta);
+      });
+
+  void _abrirAjustes() => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => AjustesScreen(store: widget.store)));
+
+  @override
+  Widget build(BuildContext context) {
+    final store = widget.store;
+    return ListenableBuilder(
+      listenable: store,
+      builder: (context, _) {
+        final r = store.resumo(_mes.year, _mes.month);
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(store.ajustes.nomeNegocio),
+            actions: [BotaoConfiguracoes(store: store)],
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.secao),
+            children: [
+              _SeletorMes(
+                texto: _mesAno.format(_mes),
+                onAnterior: () => _mudarMes(-1),
+                onProximo: () => _mudarMes(1),
+              ),
+              // O conteúdo do mês desliza para o lado da seta tocada.
+              AnimatedSwitcher(
+                duration: Movimento.medio,
+                switchInCurve: Movimento.entrada,
+                switchOutCurve: Movimento.saida,
+                transitionBuilder: (child, anim) {
+                  final entrando = child.key == ValueKey(_mes);
+                  final dx = (entrando ? 1 : -1) * (_voltando ? -0.06 : 0.06);
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(anim),
+                      child: child,
+                    ),
+                  );
+                },
+                layoutBuilder: (atual, anteriores) => Stack(
+                  alignment: Alignment.topCenter,
+                  children: [...anteriores, if (atual != null) atual],
+                ),
+                child: _ConteudoMes(
+                  key: ValueKey(_mes),
+                  store: store,
+                  r: r,
+                  mes: _mes,
+                  onAjustes: _abrirAjustes,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 
 class _ConteudoMes extends StatelessWidget {
   final Store store;
