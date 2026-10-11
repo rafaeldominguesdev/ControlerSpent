@@ -6,6 +6,75 @@ import '../receitas_prontas.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'produto_form.dart';
+
+/// Lista de receitas prontas para adicionar em um toque.
+class ReceitasProntasScreen extends StatefulWidget {
+  final Store store;
+  const ReceitasProntasScreen({super.key, required this.store});
+
+  @override
+  State<ReceitasProntasScreen> createState() => _ReceitasProntasScreenState();
+}
+
+class _ReceitasProntasScreenState extends State<ReceitasProntasScreen> {
+  String? _aberta; // receita com os ingredientes à mostra
+  final _adicionando = <String>{};
+
+  Store get store => widget.store;
+
+  Future<void> _adicionar(ModeloReceita m) async {
+    setState(() => _adicionando.add(m.nome));
+    final p = await adicionarReceitaPronta(store, m);
+    if (!mounted) return;
+    setState(() => _adicionando.remove(m.nome));
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('${m.nome} adicionado. Confira os preços em Ingredientes.'),
+      // Com botão, o aviso ficaria preso na tela; some sozinho em 4 s.
+      persist: false,
+      duration: const Duration(seconds: 4),
+      action: SnackBarAction(
+        label: 'Ver',
+        onPressed: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => ProdutoForm(store: store, atual: p))),
+      ),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tipos;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Receitas prontas')),
+      body: ListenableBuilder(
+        listenable: store,
+        builder: (context, _) => ListView(
+          padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.secao),
+          children: [
+            Text(
+              'Produtos completos, com ingredientes e embalagem. Os preços são de referência: '
+              'depois de adicionar, ajuste em Ingredientes com o que você paga.',
+              style: t.apoio(),
+            ),
+            const SizedBox(height: Espaco.l),
+            GrupoLista(recuoDivisoria: 70, children: [
+              for (final m in receitasProntas)
+                _LinhaReceita(
+                  m: m,
+                  store: store,
+                  aberta: _aberta == m.nome,
+                  adicionando: _adicionando.contains(m.nome),
+                  onTap: () => setState(() => _aberta = _aberta == m.nome ? null : m.nome),
+                  onAdicionar: () => _adicionar(m),
+                ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _LinhaReceita extends StatelessWidget {
   final ModeloReceita m;
