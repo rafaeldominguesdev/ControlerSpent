@@ -388,6 +388,15 @@ class _Sugestao extends StatelessWidget {
   }
 }
 
+/// Edita um registro já feito (venda, produção ou perda).
+Future<void> editarLancamento(BuildContext context, Store store, Lancamento atual) =>
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _EditarLancamento(store: store, atual: atual),
+    );
+
 class _EditarLancamento extends StatefulWidget {
   final Store store;
   final Lancamento atual;
