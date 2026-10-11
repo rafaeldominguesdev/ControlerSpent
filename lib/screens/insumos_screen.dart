@@ -4,6 +4,56 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'ajustes_screen.dart';
+
+class InsumosScreen extends StatelessWidget {
+  final Store store;
+  const InsumosScreen({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: store,
+        builder: (context, _) => _tela(context),
+      );
+
+  Widget _tela(BuildContext context) {
+    final ingredientes = store.insumos.where((i) => !i.ehEmbalagem).toList();
+    final embalagens = store.insumos.where((i) => i.ehEmbalagem).toList();
+    return Scaffold(
+      appBar:
+          AppBar(title: const Text('Ingredientes'), actions: [BotaoConfiguracoes(store: store)]),
+      floatingActionButton: store.insumos.isEmpty
+          ? null
+          : Pressionavel(
+              child: FloatingActionButton.extended(
+                onPressed: () => editarInsumo(context, store),
+                icon: const Icon(Icons.add),
+                label: const Text('Adicionar'),
+              ),
+            ),
+      body: store.insumos.isEmpty
+          ? Center(
+              child: Vazio(
+                icone: Icons.shopping_basket_outlined,
+                titulo: 'O que você compra',
+                texto: 'Cadastre como vem na embalagem, por exemplo: leite condensado, '
+                    '395 g, R\$ 7,90. O app calcula o custo de cada grama.',
+                acao: 'Cadastrar ingrediente',
+                onAcao: () => editarInsumo(context, store),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, 120),
+              children: [
+                if (ingredientes.isNotEmpty)
+                  EntradaSuave(child: _Secao('Ingredientes', ingredientes, store)),
+                if (embalagens.isNotEmpty)
+                  EntradaSuave(ordem: 1, child: _Secao('Embalagens', embalagens, store)),
+              ],
+            ),
+    );
+  }
+}
 
 class _Secao extends StatelessWidget {
   final String titulo;
