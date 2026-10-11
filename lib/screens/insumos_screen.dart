@@ -4,6 +4,16 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 
+/// Abre o formulário de cadastro/edição. Devolve o insumo salvo, se houver.
+Future<Insumo?> editarInsumo(BuildContext context, Store store, [Insumo? atual]) {
+  return showModalBottomSheet<Insumo>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _InsumoForm(store: store, atual: atual),
+  );
+}
+
 class _InsumoForm extends StatefulWidget {
   final Store store;
   final Insumo? atual;
