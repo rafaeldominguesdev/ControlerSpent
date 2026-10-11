@@ -233,7 +233,7 @@ class SeletorOpcoes<T> extends StatelessWidget {
                   height: 40,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: v == valor ? context.cores.cacau : Colors.transparent,
+                    color: v == valor ? context.cores.acao : Colors.transparent,
                     borderRadius: BorderRadius.circular(Raio.pequeno),
                   ),
                   child: AnimatedDefaultTextStyle(
@@ -241,7 +241,7 @@ class SeletorOpcoes<T> extends StatelessWidget {
                     style: context.tipos
                         .corpo(
                           peso: FontWeight.w600,
-                          color: v == valor ? context.cores.sobreCacau : context.cores.tinta,
+                          color: v == valor ? context.cores.sobreAcao : context.cores.tinta,
                         )
                         .copyWith(fontSize: 14),
                     child: Text(texto),
@@ -287,7 +287,7 @@ class Contador extends StatelessWidget {
               height: 52,
               child: Icon(i,
                   semanticLabel: dica,
-                  color: ativo ? context.cores.cacau : context.cores.linha,
+                  color: ativo ? context.cores.acao : context.cores.linha,
                   size: 24),
             ),
           ),
@@ -340,8 +340,8 @@ class Vazio extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: BoxDecoration(color: context.cores.bege, shape: BoxShape.circle),
-            child: Icon(icone, color: context.cores.cacau, size: 24),
+            decoration: BoxDecoration(color: context.cores.realce, shape: BoxShape.circle),
+            child: Icon(icone, color: context.cores.acao, size: 24),
           ),
           const SizedBox(height: Espaco.l),
           Text(titulo, textAlign: TextAlign.center, style: context.tipos.secao()),
@@ -412,7 +412,7 @@ class NavAnimada extends StatelessWidget {
                         width: 24,
                         height: 3,
                         decoration: BoxDecoration(
-                          color: context.cores.cacau,
+                          color: context.cores.acao,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -457,7 +457,7 @@ class _BotaoNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cor = Color.lerp(context.cores.tintaSuave, context.cores.cacau, ativo)!;
+    final cor = Color.lerp(context.cores.tintaSuave, context.cores.acao, ativo)!;
     return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Icon(ativo > 0.5 ? item.iconeAtivo : item.icone, color: cor, size: 22),
       const SizedBox(height: 3),
@@ -536,7 +536,7 @@ class BarraInferior extends StatelessWidget {
                               borderRadius: BorderRadius.circular(Raio.medio)),
                         ),
                         onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
-                        icon: Icon(Icons.keyboard_hide_outlined, color: context.cores.cacau),
+                        icon: Icon(Icons.keyboard_hide_outlined, color: context.cores.acao),
                       ),
                     )
                   : const SizedBox.shrink(),
@@ -574,7 +574,7 @@ class FotoProduto extends StatelessWidget {
         height: tamanho,
         child: b == null
             ? ColoredBox(
-                color: context.cores.bege,
+                color: context.cores.realce,
                 child: Icon(Icons.cake_outlined,
                     size: tamanho * 0.42, color: context.cores.tintaSuave),
               )

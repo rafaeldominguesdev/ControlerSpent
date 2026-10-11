@@ -220,10 +220,10 @@ class _ProdutoFormState extends State<ProdutoForm> {
                 GrupoLista(children: [
                   for (final it in _p.itens) _linhaItem(it, insumos[it.insumoId]),
                   ListTile(
-                    leading: Icon(Icons.add, color: context.cores.cacau),
+                    leading: Icon(Icons.add, color: context.cores.acao),
                     title: Text('Adicionar ingrediente',
                         style:
-                            context.tipos.corpo(peso: FontWeight.w600, color: context.cores.cacau)),
+                            context.tipos.corpo(peso: FontWeight.w600, color: context.cores.acao)),
                     onTap: _adicionarItem,
                   ),
                 ]),
@@ -342,18 +342,18 @@ class _FotoGrande extends StatelessWidget {
                       children: [...anteriores, if (atual != null) atual],
                     ),
                     child: base64 == null
-                        ? ColoredBox(key: const ValueKey('sem'), color: context.cores.bege)
+                        ? ColoredBox(key: const ValueKey('sem'), color: context.cores.realce)
                         : Image.memory(FotoProduto.bytes(base64!),
                             key: ValueKey(base64!.length), fit: BoxFit.cover),
                   ),
                 ),
                 if (base64 == null)
                   Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.add_a_photo_outlined, color: context.cores.cacau, size: 30),
+                    Icon(Icons.add_a_photo_outlined, color: context.cores.acao, size: 30),
                     const SizedBox(height: Espaco.s),
                     Text('Pôr uma foto',
                         style:
-                            context.tipos.corpo(peso: FontWeight.w600, color: context.cores.cacau)),
+                            context.tipos.corpo(peso: FontWeight.w600, color: context.cores.acao)),
                   ])
                 else
                   Positioned(
@@ -367,7 +367,7 @@ class _FotoGrande extends StatelessWidget {
                       ),
                       child: Text('Trocar foto',
                           style: context.tipos
-                              .apoio(color: context.cores.sobreCacau)
+                              .apoio(color: context.cores.sobreAcao)
                               .copyWith(fontWeight: FontWeight.w600)),
                     ),
                   ),

@@ -396,7 +396,7 @@ class _ParaOndeFoi extends StatelessWidget {
     final t = context.tipos;
     final partes = [
       if (r.lucroBolso > 0) ('Lucro', r.lucroBolso, c.dinheiro),
-      ('Ingredientes e embalagens', r.custo, c.caramelo),
+      ('Ingredientes e embalagens', r.custo, c.destaque),
       if (r.taxas > 0) ('Taxas da maquininha', r.taxas, c.grafico[2]),
     ];
     final total = partes.fold(0.0, (s, p) => s + p.$2);
@@ -490,7 +490,7 @@ class _Ranking extends StatelessWidget {
               SizedBox(
                 width: 22,
                 child: Text('${i + 1}',
-                    style: t.display(size: 22, color: i == 0 ? c.caramelo : c.tintaSuave)),
+                    style: t.display(size: 22, color: i == 0 ? c.destaque : c.tintaSuave)),
               ),
               const SizedBox(width: Espaco.s),
               FotoProduto(fotos[p.id], tamanho: 36),
