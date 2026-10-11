@@ -204,3 +204,8 @@ class Tipos {
       GoogleFonts.figtree(
           fontSize: size, fontWeight: peso, color: color ?? c.tinta, fontFeatures: _numeros);
 }
+
+extension TemaDoContexto on BuildContext {
+  Cores get cores => Theme.of(this).extension<Cores>()!;
+  Tipos get tipos => Tipos(cores);
+}
