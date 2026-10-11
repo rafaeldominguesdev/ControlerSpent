@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'exemplo.dart';
 import 'models.dart';
 import 'screens/insumos_screen.dart';
 import 'screens/producao_screen.dart';
@@ -11,6 +12,17 @@ import 'screens/vendas_screen.dart';
 import 'store.dart';
 import 'theme.dart';
 import 'widgets.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('pt_BR');
+  final store = Store();
+  await store.carregar();
+  if (const bool.fromEnvironment('EXEMPLO') && store.produtos.isEmpty) {
+    await carregarExemplo(store);
+  }
+  runApp(ConfeitariaApp(store: store));
+}
 
 class ConfeitariaApp extends StatelessWidget {
   final Store store;
