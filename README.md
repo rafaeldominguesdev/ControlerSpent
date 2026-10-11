@@ -11,13 +11,15 @@ receitas e o app calcula custo, preço sugerido e lucro.
 - **Produtos**: receita com foto, rendimento e margem; custo por unidade, preço sugerido e
   semáforo de margem. Inclui **receitas prontas** (pão de mel, brigadeiro, brownie e outras)
   que reaproveitam os ingredientes já cadastrados.
-- **Vendas**: registro em poucos toques (produto, quantidade, pagamento), com cliente e
-  observação; taxas da maquininha descontadas automaticamente.
+- **Vendas**: o total de hoje em verde, os produtos em grade ou em lista (um toque abre a
+  venda: quantidade, pagamento, cliente e observação) e o histórico separado por dia; taxas
+  da maquininha descontadas automaticamente.
 - **Produção**: quanto ficou pronto, estoque para vender e perdas.
-- **Relatório do mês**: vendas por dia, lucro, margem, para onde foi o dinheiro, mais
-  vendidos, vendas por produto, contas fixas e salário, e os últimos 6 meses.
-- **Configurações**: tema claro, escuro ou automático; nome do negócio, salário, contas fixas
-  e taxas por forma de pagamento.
+- **Relatório do mês**, como um extrato: quanto entrou, quanto saiu e quanto ficou ("de cada
+  R$ 10 vendidos, R$ 7 ficaram com você"), quanto sobra ou falta para as contas fixas e o
+  salário, as vendas semana a semana e os mais vendidos.
+- **Configurações** (aba Mais): nome do negócio, salário, contas fixas e taxas por forma de
+  pagamento.
 
 ## Regra de contas
 
@@ -34,7 +36,7 @@ flutter run --dart-define=EXEMPLO=true       # abre com uma confeitaria de exemp
 flutter test                                 # testes de cálculo e de produção
 ```
 
-Prints de todas as telas (claro e escuro) no simulador:
+Prints das telas no simulador:
 
 ```sh
 flutter drive --driver=test_driver/integration_test.dart \
@@ -57,7 +59,8 @@ xcrun devicectl device install app --device <UDID> build/ios/iphoneos/Runner.app
 
 - `lib/models.dart`: ingredientes, produtos, cálculo, vendas/produção/perdas e resumo do mês
 - `lib/store.dart`: armazenamento local, estoque e formatação de dinheiro
-- `lib/theme.dart`: cores (claro e escuro), espaçamentos, movimento e tipografia
+- `lib/theme.dart`: cores, espaçamentos, movimento e tipografia
 - `lib/widgets.dart`: componentes compartilhados
 - `lib/screens/`: telas
-- `assets/icone/`: desenho do ícone (SVG); os tamanhos saem de `dart run flutter_launcher_icons`
+- `assets/logo/`: logo (SVG e degradê), ícone e abertura; os tamanhos saem de
+  `dart run flutter_launcher_icons` e `dart run flutter_native_splash:create`
