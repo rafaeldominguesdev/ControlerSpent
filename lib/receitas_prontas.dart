@@ -224,3 +224,32 @@ double custoEstimado(Store store, ModeloReceita m) {
   }
   return total / m.rendimento;
 }
+
+/// Cria o produto (e os ingredientes que faltam). Devolve o produto criado.
+Future<Produto> adicionarReceitaPronta(Store store, ModeloReceita m) async {
+  final itens = <ItemReceita>[];
+  for (final (mi, qtd) in m.itens) {
+    var ins = _existente(store, mi);
+    if (ins == null) {
+      ins = Insumo(
+        nome: mi.nome,
+        unidade: mi.unidade,
+        qtdEmbalagem: mi.qtdEmbalagem,
+        precoCentavos: mi.precoCentavos,
+        ehEmbalagem: mi.embalagem,
+      );
+      await store.salvarInsumo(ins);
+    }
+    itens.add(ItemReceita(insumoId: ins.id, qtd: qtd));
+  }
+  final p = Produto(
+    nome: m.nome,
+    categoria: m.categoria,
+    rendimento: m.rendimento,
+    margem: 0.5,
+    precoVendaCentavos: m.precoVendaCentavos,
+    itens: itens,
+  );
+  await store.salvarProduto(p);
+  return p;
+}
