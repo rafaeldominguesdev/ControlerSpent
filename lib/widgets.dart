@@ -253,3 +253,64 @@ class SeletorOpcoes<T> extends StatelessWidget {
     );
   }
 }
+
+/// Botões de menos e mais, grandes, com o número no meio.
+class Contador extends StatelessWidget {
+  final int valor;
+  final ValueChanged<int> onChanged;
+  final int minimo;
+  const Contador({super.key, required this.valor, required this.onChanged, this.minimo = 1});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget botao(IconData i, int delta, String dica) {
+      final ativo = valor + delta >= minimo;
+      return Pressionavel(
+        escala: 0.92,
+        child: Material(
+          color: context.cores.superficie,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Raio.medio),
+            side: BorderSide(color: context.cores.linha),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(Raio.medio),
+            onTap: ativo
+                ? () {
+                    HapticFeedback.selectionClick();
+                    onChanged(valor + delta);
+                  }
+                : null,
+            child: SizedBox(
+              width: 52,
+              height: 52,
+              child: Icon(i,
+                  semanticLabel: dica,
+                  color: ativo ? context.cores.cacau : context.cores.linha,
+                  size: 24),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      botao(Icons.remove, -1, 'Diminuir'),
+      SizedBox(
+        width: 104,
+        child: AnimatedSwitcher(
+          duration: Movimento.rapido,
+          transitionBuilder: (c, a) => FadeTransition(
+            opacity: a,
+            child: ScaleTransition(scale: Tween(begin: 0.85, end: 1.0).animate(a), child: c),
+          ),
+          child: Text('$valor',
+              key: ValueKey(valor),
+              textAlign: TextAlign.center,
+              style: context.tipos.display(size: 44)),
+        ),
+      ),
+      botao(Icons.add, 1, 'Aumentar'),
+    ]);
+  }
+}
