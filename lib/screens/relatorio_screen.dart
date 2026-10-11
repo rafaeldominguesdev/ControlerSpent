@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -9,6 +11,7 @@ import 'ajustes_screen.dart';
 
 final _mesAno = DateFormat("MMMM 'de' yyyy", 'pt_BR');
 final _mesNome = DateFormat('MMMM', 'pt_BR');
+final _mesCurto = DateFormat('MMM', 'pt_BR');
 
 String _listaNomes(List<String> nomes) => switch (nomes.length) {
       0 => '',
@@ -23,7 +26,8 @@ bool _emAndamento(DateTime mes) {
 
 String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-/// O relatório como um extrato: o que entrou, o que saiu e o que ficou no mês.
+/// O relatório como um extrato: o que entrou, o que saiu e o que ficou no mês
+/// e as vendas semana a semana.
 class RelatorioScreen extends StatefulWidget {
   final Store store;
   const RelatorioScreen({super.key, required this.store});
@@ -113,6 +117,7 @@ class _ConteudoMes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tipos;
     final vendeu = r.itens.any((l) => l.vendidos > 0);
     final blocos = <Widget>[
       _Extrato(r: r, emAndamento: _emAndamento(mes), onAjustes: onAjustes),
@@ -120,8 +125,15 @@ class _ConteudoMes extends StatelessWidget {
         Vazio(
           icone: Icons.receipt_long_outlined,
           titulo: 'Nada vendido em ${_mesNome.format(mes)}',
-          texto: 'As vendas que você registrar na aba Vendas aparecem aqui.',
+          texto: 'As vendas que você registrar na aba Vendas aparecem aqui, semana a semana.',
+        )
+      else ...[
+        Padding(
+          padding: const EdgeInsets.only(top: Espaco.secao, bottom: Espaco.m),
+          child: Text('Semana a semana', style: t.secao()),
         ),
+        _Semanas(r: r, mes: mes),
+      ],
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -396,5 +408,123 @@ class _DeCadaDez extends StatelessWidget {
         ]),
       ),
     ]);
+  }
+}
+
+enum _Quando { passou, agora, falta }
+
+/// Vendas de 7 em 7 dias (1 a 7, 8 a 14...), com a semana de hoje marcada.
+class _Semanas extends StatelessWidget {
+  final ResumoMes r;
+  final DateTime mes;
+  const _Semanas({required this.r, required this.mes});
+
+  @override
+  Widget build(BuildContext context) {
+    final dias = DateUtils.getDaysInMonth(mes.year, mes.month);
+    final semanas = [for (var d = 1; d <= dias; d += 7) (d, math.min(d + 6, dias))];
+    final valores = [
+      for (final (de, ate) in semanas)
+        r.itens
+            .where((l) => l.data.day >= de && l.data.day <= ate)
+            .fold(0.0, (s, l) => s + l.faturamento),
+    ];
+    final maior = valores.fold(0.0, math.max);
+    final hoje = _emAndamento(mes) ? DateTime.now().day : null;
+    final mesCurto = _mesCurto.format(mes).replaceAll('.', '');
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Espaco.s),
+        child: Column(children: [
+          for (final (i, (de, ate)) in semanas.indexed)
+            _LinhaSemana(
+              nome: 'Semana ${i + 1}',
+              periodo: de == ate ? '$de $mesCurto' : '$de a $ate $mesCurto',
+              valor: valores[i],
+              fracao: maior == 0 ? 0 : valores[i] / maior,
+              quando: hoje == null || hoje > ate
+                  ? _Quando.passou
+                  : (hoje >= de ? _Quando.agora : _Quando.falta),
+              ordem: i,
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _LinhaSemana extends StatelessWidget {
+  final String nome, periodo;
+  final double valor, fracao;
+  final _Quando quando;
+  final int ordem;
+  const _LinhaSemana({
+    required this.nome,
+    required this.periodo,
+    required this.valor,
+    required this.fracao,
+    required this.quando,
+    required this.ordem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final escala = MediaQuery.textScalerOf(context);
+    final agora = quando == _Quando.agora;
+    final falta = quando == _Quando.falta;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: Espaco.s, vertical: Espaco.s),
+      decoration: agora
+          ? BoxDecoration(color: c.realce, borderRadius: BorderRadius.circular(Raio.pequeno))
+          : null,
+      child: Row(children: [
+        SizedBox(
+          width: escala.scale(88),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(nome,
+                style: t
+                    .corpo(peso: FontWeight.w600, color: falta ? c.tintaSuave : c.tinta)
+                    .copyWith(fontSize: 14)),
+            Text(agora ? 'esta semana' : periodo,
+                style: t.apoio(color: agora ? c.acao : null).copyWith(fontSize: 12)),
+          ]),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(5),
+            child: SizedBox(
+              height: 10,
+              child: Stack(fit: StackFit.expand, children: [
+                ColoredBox(color: agora ? c.superficie : c.realce),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: fracao),
+                  duration: Duration(milliseconds: 600 + ordem * 70),
+                  curve: Movimento.entrada,
+                  builder: (_, f, __) => FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: f,
+                    child: ColoredBox(color: c.acao),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: escala.scale(100),
+          child: Text(
+            falta ? '—' : (valor > 0 ? comSinal(valor) : reais(0)),
+            textAlign: TextAlign.right,
+            style: valor > 0
+                ? t.valor(size: 14, color: c.positivo, peso: FontWeight.w700)
+                : t.valor(size: 14, color: c.tintaSuave, peso: FontWeight.w500),
+          ),
+        ),
+      ]),
+    );
   }
 }
