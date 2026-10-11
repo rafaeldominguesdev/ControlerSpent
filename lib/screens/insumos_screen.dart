@@ -3,6 +3,28 @@ import 'package:flutter/material.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets.dart';
+
+class _Secao extends StatelessWidget {
+  final String titulo;
+  final List<Insumo> itens;
+  final Store store;
+  const _Secao(this.titulo, this.itens, this.store);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: Espaco.l),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Espaco.xs, 0, Espaco.xs, Espaco.s),
+            child: Rotulo(titulo),
+          ),
+          GrupoLista(children: [
+            for (final ins in itens) _LinhaInsumo(ins: ins, store: store),
+          ]),
+        ]),
+      );
+}
 
 class _LinhaInsumo extends StatelessWidget {
   final Insumo ins;
