@@ -125,3 +125,43 @@ class GrupoLista extends StatelessWidget {
         ]),
       );
 }
+
+/// Linha de "nota fiscal": descrição à esquerda, valor à direita.
+class LinhaConta extends StatelessWidget {
+  final String rotulo;
+  final String? detalhe;
+  final double valor;
+  final bool menos, forte;
+  final Color? cor;
+
+  /// Mostra este texto no lugar do valor em reais (ex.: "40 unidades").
+  final String? texto;
+  const LinhaConta(this.rotulo, this.valor,
+      {super.key, this.detalhe, this.menos = false, this.forte = false, this.cor, this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = this.texto ?? (menos ? '− ${reais(valor.abs())}' : reais(valor));
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(rotulo,
+                style: forte
+                    ? context.tipos.corpo(peso: FontWeight.w600)
+                    : context.tipos.corpo(color: context.cores.tinta)),
+            if (detalhe != null)
+              Text(detalhe!, style: context.tipos.apoio().copyWith(fontSize: 12)),
+          ]),
+        ),
+        const SizedBox(width: Espaco.m),
+        Text(texto,
+            style: context.tipos.valor(
+                size: forte ? 16 : 15,
+                peso: forte ? FontWeight.w700 : FontWeight.w500,
+                color: cor ?? (menos ? context.cores.tintaSuave : context.cores.tinta))),
+      ]),
+    );
+  }
+}
