@@ -4,7 +4,6 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'ajustes_screen.dart';
 
 class InsumosScreen extends StatelessWidget {
   final Store store;
@@ -20,8 +19,7 @@ class InsumosScreen extends StatelessWidget {
     final ingredientes = store.insumos.where((i) => !i.ehEmbalagem).toList();
     final embalagens = store.insumos.where((i) => i.ehEmbalagem).toList();
     return Scaffold(
-      appBar:
-          AppBar(title: const Text('Ingredientes'), actions: [BotaoConfiguracoes(store: store)]),
+      appBar: AppBar(title: const Text('Ingredientes')),
       floatingActionButton: store.insumos.isEmpty
           ? null
           : SizedBox(

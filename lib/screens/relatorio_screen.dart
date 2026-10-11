@@ -70,10 +70,7 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
       builder: (context, _) {
         final r = store.resumo(_mes.year, _mes.month);
         return Scaffold(
-          appBar: AppBar(
-            title: Text(store.ajustes.nomeNegocio),
-            actions: [BotaoConfiguracoes(store: store)],
-          ),
+          appBar: AppBar(title: Text(store.ajustes.nomeNegocio)),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.secao),
             children: [

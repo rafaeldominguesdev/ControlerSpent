@@ -5,7 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'abertura.dart';
 import 'exemplo.dart';
-import 'screens/insumos_screen.dart';
+import 'screens/mais_screen.dart';
 import 'screens/producao_screen.dart';
 import 'screens/produtos_screen.dart';
 import 'screens/relatorio_screen.dart';
@@ -77,7 +77,7 @@ class _HomeState extends State<Home> {
     VendasScreen(store: widget.store),
     ProducaoScreen(store: widget.store),
     ProdutosScreen(store: widget.store),
-    InsumosScreen(store: widget.store),
+    MaisScreen(store: widget.store),
   ];
 
   void _irPara(int i) {
@@ -115,7 +115,7 @@ class _HomeState extends State<Home> {
           ItemNav(Icons.receipt_long_outlined, Icons.receipt_long, 'Vendas'),
           ItemNav(Icons.bakery_dining_outlined, Icons.bakery_dining, 'Produção'),
           ItemNav(Icons.cake_outlined, Icons.cake, 'Produtos'),
-          ItemNav(Icons.egg_outlined, Icons.egg, 'Ingredientes'),
+          ItemNav(Icons.more_horiz, Icons.more_horiz, 'Mais'),
         ],
       ),
     );

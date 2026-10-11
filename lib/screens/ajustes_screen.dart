@@ -5,23 +5,6 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
-/// Engrenagem que abre as Configurações; fica no topo de todas as abas.
-class BotaoConfiguracoes extends StatelessWidget {
-  final Store store;
-  const BotaoConfiguracoes({super.key, required this.store});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(right: Espaco.xs),
-        child: IconButton(
-          tooltip: 'Configurações',
-          icon: const Icon(Icons.settings_outlined),
-          onPressed: () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => AjustesScreen(store: store))),
-        ),
-      );
-}
-
 /// Nome do negócio, salário, custos fixos e taxas (usados no "lucro real").
 class AjustesScreen extends StatefulWidget {
   final Store store;

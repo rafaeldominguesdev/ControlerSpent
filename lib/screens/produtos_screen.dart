@@ -7,7 +7,6 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'produto_form.dart';
 import 'receitas_prontas_screen.dart';
-import 'ajustes_screen.dart';
 
 Color corStatus(BuildContext context, StatusPreco s) => switch (s) {
       StatusPreco.lucrativo => context.cores.positivo,
@@ -45,7 +44,7 @@ class ProdutosScreen extends StatelessWidget {
 
   Widget _tela(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Produtos'), actions: [BotaoConfiguracoes(store: store)]),
+      appBar: AppBar(title: const Text('Produtos')),
       floatingActionButton: store.produtos.isEmpty
           ? null
           : SizedBox(

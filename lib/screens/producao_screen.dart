@@ -4,7 +4,6 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'ajustes_screen.dart';
 import 'lancar.dart';
 
 /// Produção: o que ficou pronto, o estoque para vender e as perdas.
@@ -108,10 +107,7 @@ class ProducaoScreen extends StatelessWidget {
         ];
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Produção'),
-            actions: [BotaoConfiguracoes(store: store)],
-          ),
+          appBar: AppBar(title: const Text('Produção')),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.xs, Espaco.borda, Espaco.secao),
             children: [

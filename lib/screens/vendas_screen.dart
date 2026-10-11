@@ -4,7 +4,6 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'ajustes_screen.dart';
 import 'lancar.dart';
 
 /// Só vendas: quanto entrou hoje, o botão de registrar e o caderno por dia.
@@ -65,10 +64,7 @@ class VendasScreen extends StatelessWidget {
         ];
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Vendas'),
-            actions: [BotaoConfiguracoes(store: store)],
-          ),
+          appBar: AppBar(title: const Text('Vendas')),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.xs, Espaco.borda, Espaco.secao),
             children: [
