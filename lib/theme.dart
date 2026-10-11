@@ -372,3 +372,7 @@ ThemeData temaApp(Cores p, Brightness brilho) {
     progressIndicatorTheme: ProgressIndicatorThemeData(color: p.cacau),
   );
 }
+
+/// Temas prontos (criados uma vez só).
+final temaClaro = temaApp(Cores.claro, Brightness.light);
+final temaEscuro = temaApp(Cores.escuro, Brightness.dark);
