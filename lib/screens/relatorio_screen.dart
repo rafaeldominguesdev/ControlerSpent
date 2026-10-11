@@ -245,3 +245,88 @@ class _FaixaNumeros extends StatelessWidget {
     );
   }
 }
+
+/// Uma barra única dividida entre lucro, ingredientes e taxas.
+class _ParaOndeFoi extends StatelessWidget {
+  final ResumoMes r;
+  const _ParaOndeFoi({required this.r});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final partes = [
+      if (r.lucroBolso > 0) ('Lucro', r.lucroBolso, c.dinheiro),
+      ('Ingredientes e embalagens', r.custo, c.caramelo),
+      if (r.taxas > 0) ('Taxas da maquininha', r.taxas, c.grafico[2]),
+    ];
+    final total = partes.fold(0.0, (s, p) => s + p.$2);
+    if (total <= 0) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Espaco.l),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // A barra cresce da esquerda para a direita ao aparecer.
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 700),
+            curve: Movimento.entrada,
+            builder: (_, f, child) => ClipRect(
+              child: Align(alignment: Alignment.centerLeft, widthFactor: f, child: child),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: SizedBox(
+                height: 14,
+                // stretch: sem isso os pedaços (ColoredBox sem filho) ficam com altura zero.
+                child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  for (final (i, p) in partes.indexed)
+                    Expanded(
+                      flex: (p.$2 / total * 1000).round().clamp(1, 1000),
+                      child: Padding(
+                        padding: EdgeInsets.only(left: i == 0 ? 0 : 2),
+                        child: ColoredBox(color: p.$3),
+                      ),
+                    ),
+                ]),
+              ),
+            ),
+          ),
+          const SizedBox(height: Espaco.m),
+          for (final p in partes)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(children: [
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(color: p.$3, borderRadius: BorderRadius.circular(3)),
+                ),
+                const SizedBox(width: Espaco.s),
+                Expanded(child: Text(p.$1, style: t.apoio(color: c.tinta))),
+                Text(reais(p.$2), style: t.valor(size: 14)),
+                SizedBox(
+                  width: 44,
+                  child: Text('${(p.$2 / total * 100).round()}%',
+                      textAlign: TextAlign.right, style: t.apoio()),
+                ),
+              ]),
+            ),
+          if (r.lucroBolso < 0)
+            Padding(
+              padding: const EdgeInsets.only(top: Espaco.s),
+              child: Text('Os custos passaram as vendas em ${reais(-r.lucroBolso)}.',
+                  style: t.apoio(color: c.negativo)),
+            ),
+          if (r.perdas > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: Espaco.xs),
+              child: Text('Os ingredientes incluem ${reais(r.perdas)} de sobras e perdas.',
+                  style: t.apoio().copyWith(fontSize: 12)),
+            ),
+        ]),
+      ),
+    );
+  }
+}
