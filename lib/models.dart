@@ -56,3 +56,16 @@ class Insumo {
         ehEmbalagem: j['ehEmbalagem'] ?? false,
       );
 }
+
+/// Quanto de um insumo a receita inteira usa.
+class ItemReceita {
+  int insumoId;
+  double qtd;
+
+  ItemReceita({required this.insumoId, required this.qtd});
+
+  Map<String, dynamic> toJson() => {'insumoId': insumoId, 'qtd': qtd};
+
+  factory ItemReceita.fromJson(Map<String, dynamic> j) =>
+      ItemReceita(insumoId: j['insumoId'], qtd: (j['qtd'] as num).toDouble());
+}
