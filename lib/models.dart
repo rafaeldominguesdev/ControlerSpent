@@ -115,3 +115,5 @@ class Produto {
         fotoBase64: j['foto'],
       );
 }
+
+enum StatusPreco { lucrativo, atencao, prejuizo, semPreco }
