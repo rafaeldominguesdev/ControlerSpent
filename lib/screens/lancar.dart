@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../models.dart';
+import '../theme.dart';
 
 /// Partes comuns das abas Vendas e Produção: registrar rápido, editar,
 /// e as linhas do histórico agrupadas por dia.
@@ -33,3 +34,33 @@ String nomeDia(DateTime d) {
 }
 
 String _plural(int n, String um, String varios) => n == 1 ? '1 $um' : '$n $varios';
+
+/// Sugestão tocável (ex.: nome de cliente que já comprou).
+class _Sugestao extends StatelessWidget {
+  final String texto;
+  final VoidCallback onTap;
+  const _Sugestao({required this.texto, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    return Material(
+      color: c.superficie,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Raio.pequeno),
+        side: BorderSide(color: c.linha),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Raio.pequeno),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: Espaco.s),
+          child: Text(texto, style: context.tipos.apoio(color: c.tinta)),
+        ),
+      ),
+    );
+  }
+}
