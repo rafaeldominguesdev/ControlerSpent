@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../store.dart';
+import '../theme.dart';
+import '../widgets.dart';
 
 final _mesAno = DateFormat("MMMM 'de' yyyy", 'pt_BR');
 final _mesNome = DateFormat('MMMM', 'pt_BR');
@@ -37,3 +39,27 @@ double _vendasDoMes(Store store, DateTime mes, {int? ateDia}) => store.lancament
         l.data.month == mes.month &&
         (ateDia == null || l.data.day <= ateDia))
     .fold(0.0, (s, l) => s + l.faturamento);
+
+class _SeletorMes extends StatelessWidget {
+  final String texto;
+  final VoidCallback onAnterior, onProximo;
+  const _SeletorMes({required this.texto, required this.onAnterior, required this.onProximo});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: Espaco.s),
+        child: Row(children: [
+          Expanded(child: Rotulo(texto)),
+          IconButton(
+            tooltip: 'Mês anterior',
+            onPressed: onAnterior,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          IconButton(
+            tooltip: 'Próximo mês',
+            onPressed: onProximo,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ]),
+      );
+}
