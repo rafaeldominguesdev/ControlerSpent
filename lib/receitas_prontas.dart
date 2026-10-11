@@ -1,4 +1,5 @@
 import 'models.dart';
+import 'store.dart';
 
 /// Receitas prontas: produto completo com ingredientes, embalagem e preço.
 /// Os preços dos ingredientes são de referência (mercado, 2026); a pessoa ajusta
@@ -192,3 +193,34 @@ const receitasProntas = <ModeloReceita>[
     ],
   ),
 ];
+
+/// "Açúcar  Mascavo" e "acucar mascavo" são o mesmo ingrediente.
+String normalizar(String s) {
+  const acentos = {
+    'á': 'a', 'à': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', //
+    'é': 'e', 'ê': 'e', 'è': 'e', 'í': 'i', 'î': 'i',
+    'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ú': 'u', 'ü': 'u', 'ç': 'c',
+  };
+  final minusculo = s.trim().toLowerCase();
+  final semAcento = minusculo.split('').map((ch) => acentos[ch] ?? ch).join();
+  return semAcento.replaceAll(RegExp(r'\s+'), ' ');
+}
+
+bool jaAdicionada(Store store, ModeloReceita m) =>
+    store.produtos.any((p) => normalizar(p.nome) == normalizar(m.nome));
+
+/// Usa o ingrediente que a pessoa já tem (mesmo nome e unidade) ou o da receita.
+Insumo? _existente(Store store, ModeloInsumo mi) => store.insumos
+    .where((i) => normalizar(i.nome) == normalizar(mi.nome) && i.unidade == mi.unidade)
+    .firstOrNull;
+
+/// Custo por unidade da receita com os preços que valeriam ao adicionar.
+double custoEstimado(Store store, ModeloReceita m) {
+  var total = 0.0;
+  for (final (mi, qtd) in m.itens) {
+    final ins = _existente(store, mi);
+    final porUnidade = ins?.custoPorUnidade ?? mi.precoCentavos / mi.qtdEmbalagem;
+    total += porUnidade * qtd;
+  }
+  return total / m.rendimento;
+}
