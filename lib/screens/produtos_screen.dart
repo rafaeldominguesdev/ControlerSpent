@@ -37,21 +37,6 @@ class ProdutosScreen extends StatelessWidget {
     );
   }
 
-  String _saude(List<Calculo> calculos) {
-    final n = calculos.length;
-    final bons = calculos.where((c) => c.status == StatusPreco.lucrativo).length;
-    final ruins = calculos
-        .where((c) => c.status == StatusPreco.atencao || c.status == StatusPreco.prejuizo)
-        .length;
-    final total = n == 1 ? '1 produto' : '$n produtos';
-    if (ruins == 0 && bons == n) return '$total, todos com boa margem.';
-    final partes = [
-      if (bons > 0) bons == 1 ? '1 com boa margem' : '$bons com boa margem',
-      if (ruins > 0) ruins == 1 ? '1 pedindo atenção' : '$ruins pedindo atenção',
-    ];
-    return partes.isEmpty ? '$total.' : '$total: ${partes.join(' e ')}.';
-  }
-
   @override
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: store,
@@ -88,19 +73,25 @@ class ProdutosScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.secao),
             children: [
-              EntradaSuave(
-                child: Text(_saude(calculos),
-                    style: context.tipos.corpo(color: context.cores.tintaSuave)),
-              ),
-              const SizedBox(height: Espaco.l),
+              EntradaSuave(child: _Destaque(calculos: calculos)),
+              const SizedBox(height: Espaco.xl),
               EntradaSuave(ordem: 1, child: _AtalhoProntas(onTap: () => _abrirProntas(context))),
-              const SizedBox(height: Espaco.m),
+              const SizedBox(height: Espaco.l),
               EntradaSuave(
                 ordem: 2,
-                child: GrupoLista(recuoDivisoria: 72, children: [
-                  for (final (i, p) in store.produtos.indexed)
-                    _LinhaProduto(p: p, c: calculos[i], onTap: () => _abrir(context, p)),
-                ]),
+                child: GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  crossAxisCount: 2,
+                  mainAxisSpacing: Espaco.m,
+                  crossAxisSpacing: Espaco.m,
+                  childAspectRatio: 0.8,
+                  children: [
+                    for (final (i, p) in store.produtos.indexed)
+                      _CartaoProduto(p: p, c: calculos[i], onTap: () => _abrir(context, p)),
+                  ],
+                ),
               ),
             ],
           );
@@ -110,50 +101,110 @@ class ProdutosScreen extends StatelessWidget {
   }
 }
 
-class _LinhaProduto extends StatelessWidget {
-  final Produto p;
-  final Calculo c;
-  final VoidCallback onTap;
-  const _LinhaProduto({required this.p, required this.c, required this.onTap});
+/// Topo da aba: quantos produtos e a margem média do cardápio.
+class _Destaque extends StatelessWidget {
+  final List<Calculo> calculos;
+  const _Destaque({required this.calculos});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final margens = [
+      for (final x in calculos)
+        if (x.margemReal != null) x.margemReal!
+    ];
+    final media = margens.isEmpty ? null : margens.reduce((a, b) => a + b) / margens.length * 100;
+    final atencao = calculos
+        .where((x) => x.status == StatusPreco.atencao || x.status == StatusPreco.prejuizo)
+        .length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Rotulo('Cardápio'),
+      const SizedBox(height: Espaco.xs),
+      Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text('${calculos.length}', style: t.display(size: 46)),
+            const SizedBox(width: Espaco.s),
+            Text(calculos.length == 1 ? 'produto' : 'produtos', style: t.apoio()),
+          ]),
+      const SizedBox(height: Espaco.s),
+      Wrap(spacing: Espaco.s, runSpacing: Espaco.s, children: [
+        if (media != null)
+          Pilula('margem média ${media.toStringAsFixed(0)}%',
+              cor: media >= 30 ? c.positivo : c.atencao, icone: Icons.trending_up),
+        if (atencao > 0)
+          Pilula(atencao == 1 ? '1 pedindo atenção' : '$atencao pedindo atenção',
+              cor: c.negativo, icone: Icons.error_outline),
+      ]),
+    ]);
+  }
+}
+
+/// Produto em cartão: foto grande, margem por cima, nome e preço.
+class _CartaoProduto extends StatelessWidget {
+  final Produto p;
+  final Calculo c;
+  final VoidCallback onTap;
+  const _CartaoProduto({required this.p, required this.c, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final t = context.tipos;
     final cor = corStatus(context, c.status);
     final margem = c.margemReal == null ? null : '${(c.margemReal! * 100).toStringAsFixed(0)}%';
-    // Só escreve o status quando pede atenção; margem boa já fala por si.
-    final legenda = switch (c.status) {
-      StatusPreco.lucrativo => '$margem de margem',
-      StatusPreco.semPreco => 'sem preço',
-      _ => '${textoStatus(c.status)}, $margem',
-    };
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
-        child: Row(children: [
-          Hero(
-            tag: 'foto-${p.id}',
-            child: FotoProduto(p.fotoBase64, tamanho: 44),
-          ),
-          const SizedBox(width: Espaco.m),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(p.nome,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.tipos.corpo(peso: FontWeight.w600)),
-              Text('Custa ${reais(c.custoUnitario)}',
-                  style: context.tipos.apoio().copyWith(fontSize: 12)),
-            ]),
-          ),
-          const SizedBox(width: Espaco.s),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(reais(c.precoVenda ?? c.precoSugerido),
-                style: context.tipos.valor(
-                    color: c.precoVenda == null ? context.cores.tintaSuave : context.cores.tinta)),
-            Text(legenda, style: context.tipos.apoio(color: cor).copyWith(fontSize: 12)),
+    return Pressionavel(
+      child: Material(
+        color: cores.superficie,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Raio.medio),
+          side: BorderSide(color: cores.linha),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Expanded(
+              child: Stack(fit: StackFit.expand, children: [
+                Hero(
+                  tag: 'foto-${p.id}',
+                  child: LayoutBuilder(
+                    builder: (_, caixa) =>
+                        FotoProduto(p.fotoBase64, tamanho: caixa.maxWidth, raio: 0),
+                  ),
+                ),
+                Positioned(
+                  top: Espaco.s,
+                  right: Espaco.s,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: Espaco.s, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: cores.papel.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(Raio.pequeno),
+                    ),
+                    child: Text(margem ?? textoStatus(c.status),
+                        style: t.valor(size: 12, color: cor, peso: FontWeight.w700)),
+                  ),
+                ),
+              ]),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Espaco.m, Espaco.s, Espaco.m, Espaco.m),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(p.nome,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.corpo(peso: FontWeight.w600).copyWith(fontSize: 14)),
+                const SizedBox(height: 2),
+                Text(reais(c.precoVenda ?? c.precoSugerido),
+                    style: t.valor(
+                        size: 15, color: c.precoVenda == null ? cores.tintaSuave : cores.tinta)),
+              ]),
+            ),
           ]),
-        ]),
+        ),
       ),
     );
   }
