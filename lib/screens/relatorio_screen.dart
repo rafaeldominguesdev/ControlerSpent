@@ -41,6 +41,68 @@ double _vendasDoMes(Store store, DateTime mes, {int? ateDia}) => store.lancament
         (ateDia == null || l.data.day <= ateDia))
     .fold(0.0, (s, l) => s + l.faturamento);
 
+class _ConteudoMes extends StatelessWidget {
+  final Store store;
+  final ResumoMes r;
+  final DateTime mes;
+  final VoidCallback onAjustes;
+  const _ConteudoMes(
+      {super.key,
+      required this.store,
+      required this.r,
+      required this.mes,
+      required this.onAjustes});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tipos;
+    final produtos = r.porProduto();
+    Widget titulo(String s) => Text(s, style: t.secao());
+    final blocos = <Widget>[
+      _Destaque(store: store, r: r, mes: mes),
+      const SizedBox(height: Espaco.xl),
+      _FaixaNumeros(r: r),
+      if (r.itens.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: Espaco.l),
+          child: Vazio(
+            icone: Icons.receipt_long_outlined,
+            titulo: 'Nada vendido em ${_mesNome.format(mes)}',
+            texto: 'Quando você registrar vendas na aba Vendas, os gráficos aparecem aqui.',
+          ),
+        )
+      else ...[
+        const SizedBox(height: Espaco.secao),
+        titulo('Para onde foi o dinheiro'),
+        const SizedBox(height: Espaco.m),
+        _ParaOndeFoi(r: r),
+        const SizedBox(height: Espaco.secao),
+        titulo('Mais vendidos'),
+        const SizedBox(height: Espaco.m),
+        _Ranking(store: store, produtos: produtos),
+        const SizedBox(height: Espaco.secao),
+        titulo('Vendas por produto'),
+        const SizedBox(height: Espaco.m),
+        _Rosca(produtos: produtos, total: r.faturamento),
+      ],
+      const SizedBox(height: Espaco.secao),
+      titulo('Contas do mês'),
+      const SizedBox(height: Espaco.m),
+      _ContasDoMes(r: r, onAjustes: onAjustes),
+      const SizedBox(height: Espaco.secao),
+      titulo('Últimos 6 meses'),
+      const SizedBox(height: Espaco.m),
+      _Meses(store: store, ate: mes),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, b) in blocos.indexed) EntradaSuave(ordem: i ~/ 3, child: b),
+      ],
+    );
+  }
+}
+
 class _SeletorMes extends StatelessWidget {
   final String texto;
   final VoidCallback onAnterior, onProximo;
