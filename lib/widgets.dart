@@ -467,10 +467,11 @@ class NavAnimada extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = itens.length;
+    final c = context.cores;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: context.cores.superficie,
-        border: Border(top: BorderSide(color: context.cores.linha)),
+        color: c.superficie,
+        border: Border(top: BorderSide(color: c.linha)),
       ),
       child: SafeArea(
         top: false,
@@ -491,7 +492,7 @@ class NavAnimada extends StatelessWidget {
                         width: 24,
                         height: 3,
                         decoration: BoxDecoration(
-                          color: context.cores.acao,
+                          color: c.acao,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
