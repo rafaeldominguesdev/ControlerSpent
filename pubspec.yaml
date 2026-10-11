@@ -25,6 +25,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 flutter:
   uses-material-design: true
@@ -46,3 +47,15 @@ flutter_launcher_icons:
     image_path: "assets/logo/icone.png"
     background_color: "#3555FE"
     theme_color: "#366FFD"
+
+# Tela nativa de abertura (gerada com: dart run flutter_native_splash:create).
+# Começa no azul liso com a logo, igual ao primeiro quadro de lib/abertura.dart,
+# que então faz o degradê se formar.
+flutter_native_splash:
+  color: "#3555FE"
+  image: assets/logo/abertura.png
+  android_12:
+    color: "#3555FE"
+    image: assets/logo/abertura_android12.png
+    icon_background_color: "#3555FE"
+  web: false
