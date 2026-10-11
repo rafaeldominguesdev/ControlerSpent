@@ -362,6 +362,93 @@ class ItemNav {
   const ItemNav(this.icone, this.iconeAtivo, this.texto);
 }
 
+/// Barra de abas: fio fino em cima e um traço que acompanha a página,
+/// inclusive enquanto o dedo arrasta entre as abas.
+class NavAnimada extends StatelessWidget {
+  final PageController controller;
+  final int atual;
+  final List<ItemNav> itens;
+  final ValueChanged<int> onTap;
+  const NavAnimada({
+    super.key,
+    required this.controller,
+    required this.atual,
+    required this.itens,
+    required this.onTap,
+  });
+
+  double _posicao() {
+    if (!controller.hasClients || !controller.position.haveDimensions) {
+      return atual.toDouble();
+    }
+    return controller.page ?? atual.toDouble();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final n = itens.length;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.cores.superficie,
+        border: Border(top: BorderSide(color: context.cores.linha)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 56,
+          child: AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) {
+              final pos = _posicao().clamp(0.0, (n - 1).toDouble());
+              return Stack(children: [
+                Align(
+                  alignment: Alignment(n == 1 ? 0 : -1 + 2 * pos / (n - 1), -1),
+                  child: FractionallySizedBox(
+                    widthFactor: 1 / n,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Container(
+                        width: 24,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: context.cores.cacau,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Row(children: [
+                  for (final (i, it) in itens.indexed)
+                    Expanded(
+                      child: Semantics(
+                        button: true,
+                        selected: i == atual,
+                        label: it.texto,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            if (i != atual) HapticFeedback.selectionClick();
+                            onTap(i);
+                          },
+                          child: ExcludeSemantics(
+                            // 1 quando a página está inteira na tela, 0 quando está longe.
+                            child:
+                                _BotaoNav(item: it, ativo: (1 - (pos - i).abs()).clamp(0.0, 1.0)),
+                          ),
+                        ),
+                      ),
+                    ),
+                ]),
+              ]);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BotaoNav extends StatelessWidget {
   final ItemNav item;
   final double ativo; // 0 a 1
