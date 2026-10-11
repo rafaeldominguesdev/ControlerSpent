@@ -233,3 +233,7 @@ class Ajustes {
         tema: TemaApp.values.asNameMap()[j['tema']] ?? TemaApp.sistema,
       );
 }
+
+typedef PorProduto = ({int id, String nome, double faturamento, double lucro, int vendidos});
+
+String? _limpo(String? s) => (s == null || s.trim().isEmpty) ? null : s.trim();
