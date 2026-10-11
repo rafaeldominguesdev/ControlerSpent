@@ -152,3 +152,55 @@ abstract class Movimento {
   static const entrada = Curves.easeOutCubic;
   static const saida = Curves.easeInCubic;
 }
+
+/// Estilos de texto com intenção. A serifa (Newsreader) só aparece em títulos
+/// de tela e nos números grandes; todo o resto é Figtree.
+/// Use pelo contexto: `context.tipos.corpo()`.
+class Tipos {
+  final Cores c;
+  const Tipos(this.c);
+
+  static const _numeros = [FontFeature.tabularFigures()];
+
+  TextStyle display({double size = 36, Color? color}) => GoogleFonts.newsreader(
+        fontSize: size,
+        height: 1.05,
+        fontWeight: FontWeight.w500,
+        letterSpacing: -0.8,
+        color: color ?? c.tinta,
+        fontFeatures: _numeros,
+      );
+
+  TextStyle tituloTela() => GoogleFonts.newsreader(
+        fontSize: 26,
+        height: 1.1,
+        fontWeight: FontWeight.w500,
+        letterSpacing: -0.4,
+        color: c.tinta,
+      );
+
+  TextStyle secao() => GoogleFonts.newsreader(
+        fontSize: 19,
+        height: 1.2,
+        fontWeight: FontWeight.w500,
+        color: c.tinta,
+      );
+
+  /// Rótulo pequeno em caixa alta, com espaçamento aberto.
+  TextStyle rotulo({Color? color}) => GoogleFonts.figtree(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.0,
+        color: color ?? c.tintaSuave,
+      );
+
+  TextStyle corpo({Color? color, FontWeight peso = FontWeight.w400}) =>
+      GoogleFonts.figtree(fontSize: 15, height: 1.3, fontWeight: peso, color: color ?? c.tinta);
+
+  TextStyle apoio({Color? color}) =>
+      GoogleFonts.figtree(fontSize: 13, height: 1.3, color: color ?? c.tintaSuave);
+
+  TextStyle valor({double size = 15, Color? color, FontWeight peso = FontWeight.w600}) =>
+      GoogleFonts.figtree(
+          fontSize: size, fontWeight: peso, color: color ?? c.tinta, fontFeatures: _numeros);
+}
