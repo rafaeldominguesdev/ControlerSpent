@@ -96,3 +96,32 @@ class _PressionavelState extends State<Pressionavel> {
     );
   }
 }
+
+/// Rótulo pequeno em caixa alta ("HOJE", "CONTA DO MÊS").
+class Rotulo extends StatelessWidget {
+  final String texto;
+  final Color? cor;
+  const Rotulo(this.texto, {super.key, this.cor});
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(texto.toUpperCase(), style: context.tipos.rotulo(color: cor));
+}
+
+/// Várias linhas dentro de uma única superfície, separadas por fios.
+class GrupoLista extends StatelessWidget {
+  final List<Widget> children;
+  final double recuoDivisoria;
+  const GrupoLista({super.key, required this.children, this.recuoDivisoria = 16});
+
+  @override
+  Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(children: [
+          for (final (i, c) in children.indexed) ...[
+            if (i > 0) Divider(indent: recuoDivisoria),
+            c,
+          ],
+        ]),
+      );
+}
