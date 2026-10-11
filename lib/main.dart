@@ -5,7 +5,6 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'abertura.dart';
 import 'exemplo.dart';
-import 'models.dart';
 import 'screens/insumos_screen.dart';
 import 'screens/producao_screen.dart';
 import 'screens/produtos_screen.dart';
@@ -36,38 +35,27 @@ class ConfeitariaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: store.tema,
-      builder: (context, tema, _) => MaterialApp(
-        title: 'Doce Controle',
-        debugShowCheckedModeBanner: false,
-        locale: const Locale('pt', 'BR'),
-        supportedLocales: const [Locale('pt', 'BR')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        theme: temaClaro,
-        darkTheme: temaEscuro,
-        themeMode: switch (tema) {
-          TemaApp.sistema => ThemeMode.system,
-          TemaApp.claro => ThemeMode.light,
-          TemaApp.escuro => ThemeMode.dark,
-        },
-        // Troca claro/escuro com as cores se misturando, sem piscar.
-        themeAnimationDuration: Movimento.lento,
-        themeAnimationCurve: Curves.easeInOut,
-        builder: (context, child) => GestureDetector(
-          // Tocar fora de um campo fecha o teclado em qualquer tela.
-          behavior: HitTestBehavior.translucent,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          // Acompanha o tamanho de letra do celular, mas sem passar de 130%
-          // para os números e as listas não quebrarem.
-          child: MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: child!),
-        ),
-        home: Abertura(child: Home(store: store)),
+    // Por enquanto só o tema claro (o escuro continua em theme.dart para depois).
+    return MaterialApp(
+      title: 'Doce Controle',
+      debugShowCheckedModeBanner: false,
+      locale: const Locale('pt', 'BR'),
+      supportedLocales: const [Locale('pt', 'BR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      theme: temaClaro,
+      builder: (context, child) => GestureDetector(
+        // Tocar fora de um campo fecha o teclado em qualquer tela.
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        // Acompanha o tamanho de letra do celular, mas sem passar de 130%
+        // para os números e as listas não quebrarem.
+        child: MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: child!),
       ),
+      home: Abertura(child: Home(store: store)),
     );
   }
 }

@@ -22,7 +22,7 @@ class BotaoConfiguracoes extends StatelessWidget {
       );
 }
 
-/// Aparência, nome do negócio, custos fixos e salário (usados no "lucro real").
+/// Nome do negócio, salário, custos fixos e taxas (usados no "lucro real").
 class AjustesScreen extends StatefulWidget {
   final Store store;
   const AjustesScreen({super.key, required this.store});
@@ -80,20 +80,6 @@ class _AjustesScreenState extends State<AjustesScreen> {
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.s, Espaco.borda, Espaco.secao),
             children: [
-              Text('Aparência', style: titulo),
-              const SizedBox(height: Espaco.s),
-              ValueListenableBuilder(
-                valueListenable: widget.store.tema,
-                builder: (context, tema, _) => SeletorOpcoes<TemaApp>(
-                  opcoes: [for (final t in TemaApp.values) (t, t.label)],
-                  valor: tema,
-                  onChanged: widget.store.mudarTema,
-                ),
-              ),
-              const SizedBox(height: Espaco.s),
-              Text('Automático segue o modo claro ou escuro do celular.',
-                  style: context.tipos.apoio()),
-              const SizedBox(height: Espaco.secao),
               TextField(
                 controller: _nome,
                 textCapitalization: TextCapitalization.words,
