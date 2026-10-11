@@ -63,12 +63,10 @@ class ProdutosScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Produtos'), actions: [BotaoConfiguracoes(store: store)]),
       floatingActionButton: store.produtos.isEmpty
           ? null
-          : Pressionavel(
-              child: FloatingActionButton.extended(
-                onPressed: () => _abrir(context),
-                icon: const Icon(Icons.add),
-                label: const Text('Novo produto'),
-              ),
+          : SizedBox(
+              width: 190,
+              child: BotaoPrincipal(
+                  texto: 'Novo produto', icone: Icons.add, onPressed: () => _abrir(context)),
             ),
       body: Builder(
         builder: (context) {
@@ -88,7 +86,7 @@ class ProdutosScreen extends StatelessWidget {
           }
           final calculos = [for (final p in store.produtos) store.calcular(p)];
           return ListView(
-            padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, 120),
+            padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.secao),
             children: [
               EntradaSuave(
                 child: Text(_saude(calculos),

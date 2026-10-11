@@ -459,7 +459,7 @@ class _FluxoRapidoState extends State<_FluxoRapido> {
                 ],
             },
             const SizedBox(height: Espaco.l),
-            Pressionavel(child: FilledButton(onPressed: _confirmar, child: Text(botao))),
+            BotaoPrincipal(texto: botao, onPressed: _confirmar),
           ],
         ),
       ),
@@ -696,7 +696,7 @@ class _EditarLancamentoState extends State<_EditarLancamento> {
                   _ => [LinhaConta('Custo dos ingredientes', previa.custo)],
                 },
               const SizedBox(height: Espaco.l),
-              FilledButton(onPressed: _salvar, child: const Text('Salvar')),
+              BotaoPrincipal(texto: 'Salvar', onPressed: _salvar),
               TextButton(
                 style: TextButton.styleFrom(foregroundColor: c.negativo),
                 onPressed: _apagar,

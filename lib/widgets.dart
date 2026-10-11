@@ -541,9 +541,7 @@ class BarraInferior extends StatelessWidget {
                   : const SizedBox.shrink(),
             ),
             Expanded(
-              child: Pressionavel(
-                child: FilledButton(onPressed: onPressed, child: Text(texto)),
-              ),
+              child: BotaoPrincipal(texto: texto, onPressed: onPressed),
             ),
           ]),
         ),
@@ -581,4 +579,23 @@ class FotoProduto extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Botão principal: cor de ação sólida, sem enfeite.
+class BotaoPrincipal extends StatelessWidget {
+  final String texto;
+  final IconData? icone;
+  final VoidCallback? onPressed;
+  const BotaoPrincipal({super.key, required this.texto, this.icone, this.onPressed});
+
+  @override
+  Widget build(BuildContext context) => Pressionavel(
+        child: icone == null
+            ? FilledButton(onPressed: onPressed, child: Text(texto))
+            : FilledButton.icon(
+                onPressed: onPressed,
+                icon: Icon(icone, size: 22),
+                label: Text(texto),
+              ),
+      );
 }

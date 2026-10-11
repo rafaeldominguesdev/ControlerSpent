@@ -24,12 +24,12 @@ class InsumosScreen extends StatelessWidget {
           AppBar(title: const Text('Ingredientes'), actions: [BotaoConfiguracoes(store: store)]),
       floatingActionButton: store.insumos.isEmpty
           ? null
-          : Pressionavel(
-              child: FloatingActionButton.extended(
-                onPressed: () => editarInsumo(context, store),
-                icon: const Icon(Icons.add),
-                label: const Text('Adicionar'),
-              ),
+          : SizedBox(
+              width: 190,
+              child: BotaoPrincipal(
+                  texto: 'Adicionar',
+                  icone: Icons.add,
+                  onPressed: () => editarInsumo(context, store)),
             ),
       body: store.insumos.isEmpty
           ? Center(
@@ -43,7 +43,7 @@ class InsumosScreen extends StatelessWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, 120),
+              padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.secao),
               children: [
                 if (ingredientes.isNotEmpty)
                   EntradaSuave(child: _Secao('Ingredientes', ingredientes, store)),
@@ -232,7 +232,7 @@ class _InsumoFormState extends State<_InsumoForm> {
                   validator: (v) => parseCentavos(v ?? '') == null ? 'Informe o preço' : null,
                 ),
                 const SizedBox(height: 20),
-                FilledButton(onPressed: _salvar, child: const Text('Salvar')),
+                BotaoPrincipal(texto: 'Salvar', onPressed: _salvar),
                 if (widget.atual != null)
                   TextButton(
                     style: TextButton.styleFrom(foregroundColor: context.cores.negativo),
