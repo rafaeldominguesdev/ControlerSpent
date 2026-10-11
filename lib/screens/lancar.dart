@@ -193,7 +193,7 @@ class _FluxoRapido extends StatefulWidget {
 class _FluxoRapidoState extends State<_FluxoRapido> {
   Produto? _produto;
   int _qtd = 1;
-  Pagamento _pagamento = Pagamento.pix;
+  late Pagamento _pagamento = widget.store.ultimoPagamento ?? Pagamento.pix;
   final _preco = TextEditingController();
   final _cliente = TextEditingController();
   final _obs = TextEditingController();

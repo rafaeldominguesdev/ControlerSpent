@@ -128,6 +128,12 @@ class Store extends ChangeNotifier {
     return n;
   }
 
+  /// Forma de pagamento da venda mais recente (a próxima venda já começa nela).
+  Pagamento? get ultimoPagamento => lancamentos
+      .where((l) => l.tipo == TipoLancamento.venda && l.pagamento != null)
+      .firstOrNull
+      ?.pagamento;
+
   /// Nomes de clientes, do mais recente para o mais antigo, sem repetir.
   List<String> clientesRecentes({int limite = 6}) {
     final vistos = <String>{};
