@@ -5,6 +5,9 @@ import '../receitas_prontas.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'produto_form.dart';
+import 'receitas_prontas_screen.dart';
+import 'ajustes_screen.dart';
 
 Color corStatus(BuildContext context, StatusPreco s) => switch (s) {
       StatusPreco.lucrativo => context.cores.positivo,
@@ -19,6 +22,95 @@ String textoStatus(StatusPreco s) => switch (s) {
       StatusPreco.prejuizo => 'Prejuízo',
       StatusPreco.semPreco => 'Sem preço',
     };
+
+class ProdutosScreen extends StatelessWidget {
+  final Store store;
+  const ProdutosScreen({super.key, required this.store});
+
+  void _abrirProntas(BuildContext context) => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => ReceitasProntasScreen(store: store)));
+
+  void _abrir(BuildContext context, [Produto? p]) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ProdutoForm(store: store, atual: p)),
+    );
+  }
+
+  String _saude(List<Calculo> calculos) {
+    final n = calculos.length;
+    final bons = calculos.where((c) => c.status == StatusPreco.lucrativo).length;
+    final ruins = calculos
+        .where((c) => c.status == StatusPreco.atencao || c.status == StatusPreco.prejuizo)
+        .length;
+    final total = n == 1 ? '1 produto' : '$n produtos';
+    if (ruins == 0 && bons == n) return '$total, todos com boa margem.';
+    final partes = [
+      if (bons > 0) bons == 1 ? '1 com boa margem' : '$bons com boa margem',
+      if (ruins > 0) ruins == 1 ? '1 pedindo atenção' : '$ruins pedindo atenção',
+    ];
+    return partes.isEmpty ? '$total.' : '$total: ${partes.join(' e ')}.';
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: store,
+        builder: (context, _) => _tela(context),
+      );
+
+  Widget _tela(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Produtos'), actions: [BotaoConfiguracoes(store: store)]),
+      floatingActionButton: store.produtos.isEmpty
+          ? null
+          : Pressionavel(
+              child: FloatingActionButton.extended(
+                onPressed: () => _abrir(context),
+                icon: const Icon(Icons.add),
+                label: const Text('Novo produto'),
+              ),
+            ),
+      body: Builder(
+        builder: (context) {
+          if (store.produtos.isEmpty) {
+            return Center(
+              child: Vazio(
+                icone: Icons.cake_outlined,
+                titulo: 'Seu cardápio começa aqui',
+                texto: 'Cadastre um produto com a receita. O app calcula quanto custa '
+                    'cada unidade e sugere o preço.',
+                acao: 'Usar uma receita pronta',
+                onAcao: () => _abrirProntas(context),
+                acaoSecundaria: 'Cadastrar do zero',
+                onAcaoSecundaria: () => _abrir(context),
+              ),
+            );
+          }
+          final calculos = [for (final p in store.produtos) store.calcular(p)];
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, 120),
+            children: [
+              EntradaSuave(
+                child: Text(_saude(calculos),
+                    style: context.tipos.corpo(color: context.cores.tintaSuave)),
+              ),
+              const SizedBox(height: Espaco.l),
+              EntradaSuave(ordem: 1, child: _AtalhoProntas(onTap: () => _abrirProntas(context))),
+              const SizedBox(height: Espaco.m),
+              EntradaSuave(
+                ordem: 2,
+                child: GrupoLista(recuoDivisoria: 72, children: [
+                  for (final (i, p) in store.produtos.indexed)
+                    _LinhaProduto(p: p, c: calculos[i], onTap: () => _abrir(context, p)),
+                ]),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
 
 class _LinhaProduto extends StatelessWidget {
   final Produto p;
