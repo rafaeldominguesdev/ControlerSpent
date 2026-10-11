@@ -190,3 +190,46 @@ extension TemaAppLabel on TemaApp {
         TemaApp.escuro => 'Escuro',
       };
 }
+
+class Ajustes {
+  String nomeNegocio;
+  int salarioCentavos;
+  List<CustoFixo> fixos;
+  Map<Pagamento, double> taxas; // 0.02 = 2%
+  TemaApp tema;
+
+  Ajustes(
+      {this.nomeNegocio = 'Minha Confeitaria',
+      this.salarioCentavos = 0,
+      List<CustoFixo>? fixos,
+      Map<Pagamento, double>? taxas,
+      this.tema = TemaApp.sistema})
+      : taxas = taxas ?? {for (final p in Pagamento.values) p: 0.0},
+        fixos = fixos ??
+            ['Gás', 'Energia', 'Água', 'Internet']
+                .map((n) => CustoFixo(nome: n, valorCentavos: 0))
+                .toList();
+
+  double taxa(Pagamento p) => taxas[p] ?? 0;
+
+  int get totalFixos => fixos.fold(0, (s, f) => s + f.valorCentavos);
+
+  Map<String, dynamic> toJson() => {
+        'nomeNegocio': nomeNegocio,
+        'salarioCentavos': salarioCentavos,
+        'fixos': fixos.map((f) => f.toJson()).toList(),
+        'taxas': {for (final e in taxas.entries) e.key.name: e.value},
+        'tema': tema.name,
+      };
+
+  factory Ajustes.fromJson(Map<String, dynamic> j) => Ajustes(
+        nomeNegocio: j['nomeNegocio'] ?? 'Minha Confeitaria',
+        salarioCentavos: j['salarioCentavos'] ?? 0,
+        fixos: (j['fixos'] as List).map((e) => CustoFixo.fromJson(e)).toList(),
+        taxas: {
+          for (final p in Pagamento.values)
+            p: ((j['taxas'] as Map?)?[p.name] as num?)?.toDouble() ?? 0,
+        },
+        tema: TemaApp.values.asNameMap()[j['tema']] ?? TemaApp.sistema,
+      );
+}
