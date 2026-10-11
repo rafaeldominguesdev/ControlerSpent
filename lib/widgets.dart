@@ -254,24 +254,66 @@ class SeletorOpcoes<T> extends StatelessWidget {
   }
 }
 
-/// Botões de menos e mais, grandes, com o número no meio.
+/// Botões de menos e mais, grandes, com o número no meio. Tocar no número abre
+/// o teclado para digitar (50 brigadeiros não são 49 toques no "+"), e os
+/// atalhos somam de 5 em 5 ou de 10 em 10.
 class Contador extends StatelessWidget {
   final int valor;
   final ValueChanged<int> onChanged;
   final int minimo;
-  const Contador({super.key, required this.valor, required this.onChanged, this.minimo = 1});
+  final List<int> atalhos;
+  const Contador({
+    super.key,
+    required this.valor,
+    required this.onChanged,
+    this.minimo = 1,
+    this.atalhos = const [5, 10],
+  });
+
+  Future<void> _digitar(BuildContext context) async {
+    final campo = TextEditingController(text: '$valor')
+      ..selection = TextSelection(baseOffset: 0, extentOffset: '$valor'.length);
+    final novo = await showDialog<int>(
+      context: context,
+      builder: (ctx) {
+        void confirmar() => Navigator.pop(ctx, int.tryParse(campo.text));
+        return AlertDialog(
+          title: const Text('Quantidade'),
+          content: TextField(
+            controller: campo,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            textAlign: TextAlign.center,
+            style: ctx.tipos.display(size: 36),
+            onSubmitted: (_) => confirmar(),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(88, 44)),
+              onPressed: confirmar,
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+    if (novo != null && novo >= minimo) onChanged(novo);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     Widget botao(IconData i, int delta, String dica) {
       final ativo = valor + delta >= minimo;
       return Pressionavel(
         escala: 0.92,
         child: Material(
-          color: context.cores.superficie,
+          color: c.superficie,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Raio.medio),
-            side: BorderSide(color: context.cores.linha),
+            side: BorderSide(color: c.linha),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(Raio.medio),
@@ -284,33 +326,71 @@ class Contador extends StatelessWidget {
             child: SizedBox(
               width: 52,
               height: 52,
-              child: Icon(i,
-                  semanticLabel: dica,
-                  color: ativo ? context.cores.acao : context.cores.linha,
-                  size: 24),
+              child: Icon(i, semanticLabel: dica, color: ativo ? c.acao : c.linha, size: 24),
             ),
           ),
         ),
       );
     }
 
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      botao(Icons.remove, -1, 'Diminuir'),
-      SizedBox(
-        width: 104,
-        child: AnimatedSwitcher(
-          duration: Movimento.rapido,
-          transitionBuilder: (c, a) => FadeTransition(
-            opacity: a,
-            child: ScaleTransition(scale: Tween(begin: 0.85, end: 1.0).animate(a), child: c),
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        botao(Icons.remove, -1, 'Diminuir'),
+        const SizedBox(width: Espaco.m),
+        // O número fica numa "caixinha" para parecer tocável.
+        Semantics(
+          button: true,
+          label: 'Quantidade $valor. Toque para digitar.',
+          child: Material(
+            color: c.realce,
+            borderRadius: BorderRadius.circular(Raio.medio),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(Raio.medio),
+              onTap: () => _digitar(context),
+              child: SizedBox(
+                width: 104,
+                height: 60,
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: Movimento.rapido,
+                    transitionBuilder: (w, a) => FadeTransition(
+                      opacity: a,
+                      child:
+                          ScaleTransition(scale: Tween(begin: 0.85, end: 1.0).animate(a), child: w),
+                    ),
+                    child: Text('$valor',
+                        key: ValueKey(valor),
+                        textAlign: TextAlign.center,
+                        style: context.tipos.display(size: 40)),
+                  ),
+                ),
+              ),
+            ),
           ),
-          child: Text('$valor',
-              key: ValueKey(valor),
-              textAlign: TextAlign.center,
-              style: context.tipos.display(size: 44)),
         ),
-      ),
-      botao(Icons.add, 1, 'Aumentar'),
+        const SizedBox(width: Espaco.m),
+        botao(Icons.add, 1, 'Aumentar'),
+      ]),
+      if (atalhos.isNotEmpty) ...[
+        const SizedBox(height: Espaco.s),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          for (final (i, n) in atalhos.indexed) ...[
+            if (i > 0) const SizedBox(width: Espaco.s),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(64, 36),
+                padding: const EdgeInsets.symmetric(horizontal: Espaco.m),
+                textStyle: context.tipos.valor(size: 14),
+              ),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                onChanged(valor + n);
+              },
+              child: Text('+$n'),
+            ),
+          ],
+        ]),
+      ],
     ]);
   }
 }
