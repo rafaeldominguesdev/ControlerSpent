@@ -37,6 +37,41 @@ String nomeDia(DateTime d) {
 
 String _plural(int n, String um, String varios) => n == 1 ? '1 $um' : '$n $varios';
 
+/// Registro em poucos toques: escolhe o produto, a quantidade e (na venda)
+/// pagamento e cliente.
+Future<void> registrarRapido(BuildContext context, Store store, TipoLancamento tipo) async {
+  if (store.produtos.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cadastre um produto na aba Produtos primeiro.')));
+    return;
+  }
+  final salvo = await showModalBottomSheet<Lancamento>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _FluxoRapido(store: store, tipo: tipo),
+  );
+  if (salvo == null || !context.mounted) return;
+  HapticFeedback.mediumImpact();
+  final estoque = store.estoque(salvo.produtoId);
+  final mensagem = switch (salvo.tipo) {
+    TipoLancamento.venda => 'Venda anotada. Lucro de ${reais(salvo.lucro)}.',
+    TipoLancamento.perda => 'Perda anotada. ${reais(-salvo.lucro)} de custo.',
+    _ => 'Produção anotada. ${_plural(estoque, 'pronto', 'prontos')} para vender.',
+  };
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Row(children: [
+      Icon(Icons.check_circle_outline, color: context.cores.papel, size: 22),
+      const SizedBox(width: Espaco.m),
+      Expanded(child: Text(mensagem)),
+    ]),
+    // Com botão, o aviso ficaria preso na tela; some sozinho em 4 s.
+    persist: false,
+    duration: const Duration(seconds: 4),
+    action: SnackBarAction(label: 'Desfazer', onPressed: () => store.removerLancamento(salvo)),
+  ));
+}
+
 class _FluxoRapido extends StatefulWidget {
   final Store store;
   final TipoLancamento tipo;
