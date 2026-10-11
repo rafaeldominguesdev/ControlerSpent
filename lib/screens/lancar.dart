@@ -37,6 +37,36 @@ String nomeDia(DateTime d) {
 
 String _plural(int n, String um, String varios) => n == 1 ? '1 $um' : '$n $varios';
 
+/// Um dia do histórico: título, resumo à direita e as linhas.
+class GrupoDia extends StatelessWidget {
+  final Store store;
+  final DateTime dia;
+  final List<Lancamento> itens;
+  final Widget? resumo;
+  const GrupoDia(
+      {super.key, required this.store, required this.dia, required this.itens, this.resumo});
+
+  @override
+  Widget build(BuildContext context) {
+    final fotos = {for (final p in store.produtos) p.id: p.fotoBase64};
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaco.l),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Espaco.xs, 0, Espaco.xs, Espaco.s),
+          child: Row(children: [
+            Expanded(child: Rotulo(nomeDia(dia))),
+            if (resumo != null) resumo!,
+          ]),
+        ),
+        GrupoLista(recuoDivisoria: 64, children: [
+          for (final l in itens) LinhaLancamento(store: store, l: l, foto: fotos[l.produtoId]),
+        ]),
+      ]),
+    );
+  }
+}
+
 class LinhaLancamento extends StatelessWidget {
   final Store store;
   final Lancamento l;
