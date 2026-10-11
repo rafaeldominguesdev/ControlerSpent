@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models.dart';
 import '../store.dart';
@@ -12,8 +13,8 @@ enum _Parte { vender, historico }
 int _preco(Store store, Produto p) =>
     p.precoVendaCentavos ?? store.calcular(p).precoSugerido.round();
 
-/// Vendas: quanto entrou hoje e, separados, "Vender" (os produtos em grade, um
-/// toque registra a venda) e "Histórico" (o caderno por dia).
+/// Vendas: quanto entrou hoje e, separados, "Vender" (os produtos em grade ou
+/// lista, um toque registra a venda) e "Histórico" (o caderno por dia).
 class VendasScreen extends StatefulWidget {
   final Store store;
   const VendasScreen({super.key, required this.store});
@@ -87,7 +88,7 @@ class _VendasScreenState extends State<VendasScreen> {
   }
 }
 
-/// Os produtos para vender, em grade.
+/// Os produtos para vender, em grade ou em lista (o app lembra a escolha).
 class _Vender extends StatelessWidget {
   final Store store;
   const _Vender({super.key, required this.store});
@@ -97,6 +98,7 @@ class _Vender extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     final t = context.tipos;
     if (store.produtos.isEmpty) {
       return Column(children: [
@@ -123,32 +125,69 @@ class _Vender extends StatelessWidget {
     }
     final produtos = [...store.produtos]
       ..sort((a, b) => (vendidos[b.id] ?? 0).compareTo(vendidos[a.id] ?? 0));
+    final emLista = store.vendasEmLista;
+
+    Widget alternar(IconData icone, String dica, bool lista) {
+      final ativo = emLista == lista;
+      return IconButton(
+        tooltip: dica,
+        isSelected: ativo,
+        style: IconButton.styleFrom(
+          backgroundColor: ativo ? c.realce : Colors.transparent,
+          foregroundColor: ativo ? c.acao : c.tintaSuave,
+        ),
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          store.mudarModoVendas(lista: lista);
+        },
+        icon: Icon(icone),
+      );
+    }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('Toque no produto para vender', style: t.apoio()),
-      const SizedBox(height: Espaco.m),
-      LayoutBuilder(builder: (context, caixa) {
-        // Altura fixa por cartão (foto quadrada + duas linhas de nome + preço),
-        // para os preços ficarem alinhados mesmo com nomes de tamanhos diferentes.
-        const colunas = 3;
-        final largura = (caixa.maxWidth - Espaco.s * (colunas - 1)) / colunas;
-        final escala = MediaQuery.textScalerOf(context);
-        final textos = escala.scale(13) * 1.15 * 2 + escala.scale(12) * 1.3;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: colunas,
-            mainAxisSpacing: Espaco.s,
-            crossAxisSpacing: Espaco.s,
-            mainAxisExtent: largura + Espaco.xs + Espaco.s + 4 + textos,
-          ),
-          itemCount: produtos.length,
-          itemBuilder: (context, i) => _CartaoVenda(
-              store: store, p: produtos[i], onVender: () => _vender(context, produtos[i])),
-        );
-      }),
+      Row(children: [
+        Expanded(child: Text('Toque no produto para vender', style: t.apoio())),
+        alternar(Icons.grid_view_rounded, 'Ver em grade', false),
+        alternar(Icons.view_list_rounded, 'Ver em lista', true),
+      ]),
+      const SizedBox(height: Espaco.s),
+      AnimatedSwitcher(
+        duration: Movimento.medio,
+        child: emLista
+            ? GrupoLista(
+                key: const ValueKey('lista'),
+                recuoDivisoria: 72,
+                children: [
+                  for (final p in produtos)
+                    _LinhaVenda(store: store, p: p, onVender: () => _vender(context, p)),
+                ],
+              )
+            : LayoutBuilder(
+                key: const ValueKey('grade'),
+                builder: (context, caixa) {
+                  // Altura fixa por cartão (foto quadrada + duas linhas de nome + preço),
+                  // para os preços ficarem alinhados mesmo com nomes de tamanhos diferentes.
+                  const colunas = 3;
+                  final largura = (caixa.maxWidth - Espaco.s * (colunas - 1)) / colunas;
+                  final escala = MediaQuery.textScalerOf(context);
+                  final textos = escala.scale(13) * 1.15 * 2 + escala.scale(12) * 1.3;
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: colunas,
+                      mainAxisSpacing: Espaco.s,
+                      crossAxisSpacing: Espaco.s,
+                      mainAxisExtent: largura + Espaco.xs + Espaco.s + 4 + textos,
+                    ),
+                    itemCount: produtos.length,
+                    itemBuilder: (context, i) => _CartaoVenda(
+                        store: store, p: produtos[i], onVender: () => _vender(context, produtos[i])),
+                  );
+                },
+              ),
+      ),
     ]);
   }
 }
@@ -216,6 +255,49 @@ class _CartaoVenda extends StatelessWidget {
             ),
           ]),
         ),
+      ),
+    );
+  }
+}
+
+class _LinhaVenda extends StatelessWidget {
+  final Store store;
+  final Produto p;
+  final VoidCallback onVender;
+  const _LinhaVenda({required this.store, required this.p, required this.onVender});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final estoque = store.estoque(p.id);
+    return InkWell(
+      onTap: onVender,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.s, Espaco.s, Espaco.s),
+        child: Row(children: [
+          FotoProduto(p.fotoBase64, tamanho: 44),
+          const SizedBox(width: Espaco.m),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(p.nome,
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: t.corpo(peso: FontWeight.w600)),
+              Text(
+                [
+                  reais(_preco(store, p)),
+                  if (estoque > 0) '$estoque prontos',
+                ].join(' · '),
+                style: t.apoio().copyWith(fontSize: 12),
+              ),
+            ]),
+          ),
+          IconButton.filledTonal(
+            tooltip: 'Vender ${p.nome}',
+            style: IconButton.styleFrom(backgroundColor: c.realce, foregroundColor: c.acao),
+            onPressed: onVender,
+            icon: const Icon(Icons.add),
+          ),
+        ]),
       ),
     );
   }

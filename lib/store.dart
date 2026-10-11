@@ -56,6 +56,7 @@ class Store extends ChangeNotifier {
 
   static const _kLancamentos = 'lancamentos';
   static const _kAjustes = 'ajustes';
+  static const _kVendasEmLista = 'vendasEmLista';
 
   Map<int, Insumo> get insumosPorId => {for (final i in insumos) i.id: i};
 
@@ -126,6 +127,14 @@ class Store extends ChangeNotifier {
       };
     }
     return n;
+  }
+
+  /// Em Vendas, os produtos aparecem em lista (true) ou em grade (false).
+  bool get vendasEmLista => _prefs.getBool(_kVendasEmLista) ?? false;
+
+  Future<void> mudarModoVendas({required bool lista}) async {
+    await _prefs.setBool(_kVendasEmLista, lista);
+    notifyListeners();
   }
 
   /// Forma de pagamento da venda mais recente (a próxima venda já começa nela).
