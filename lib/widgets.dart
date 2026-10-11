@@ -31,3 +31,25 @@ class ValorAnimado extends StatelessWidget {
     );
   }
 }
+
+/// Entra subindo um pouco, em sequência pela posição.
+class EntradaSuave extends StatelessWidget {
+  final int ordem;
+  final Widget child;
+  const EntradaSuave({super.key, this.ordem = 0, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (_semAnimacao(context)) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 320 + ordem.clamp(0, 8) * 50),
+      curve: Movimento.entrada,
+      builder: (_, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(offset: Offset(0, (1 - t) * 12), child: child),
+      ),
+      child: child,
+    );
+  }
+}
