@@ -196,3 +196,60 @@ class _TracejadoPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TracejadoPainter antigo) => antigo.cor != cor;
 }
+
+/// Escolha entre poucas opções (ex.: forma de pagamento), em uma faixa só.
+class SeletorOpcoes<T> extends StatelessWidget {
+  final List<(T, String)> opcoes;
+  final T valor;
+  final ValueChanged<T> onChanged;
+  const SeletorOpcoes(
+      {super.key, required this.opcoes, required this.valor, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(Espaco.xs),
+      decoration: BoxDecoration(
+        color: context.cores.superficie,
+        borderRadius: BorderRadius.circular(Raio.medio),
+        border: Border.all(color: context.cores.linha),
+      ),
+      child: Row(children: [
+        for (final (v, texto) in opcoes)
+          Expanded(
+            child: Semantics(
+              button: true,
+              selected: v == valor,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(v);
+                },
+                child: AnimatedContainer(
+                  duration: Movimento.medio,
+                  curve: Movimento.entrada,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: v == valor ? context.cores.cacau : Colors.transparent,
+                    borderRadius: BorderRadius.circular(Raio.pequeno),
+                  ),
+                  child: AnimatedDefaultTextStyle(
+                    duration: Movimento.medio,
+                    style: context.tipos
+                        .corpo(
+                          peso: FontWeight.w600,
+                          color: v == valor ? context.cores.sobreCacau : context.cores.tinta,
+                        )
+                        .copyWith(fontSize: 14),
+                    child: Text(texto),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+}
