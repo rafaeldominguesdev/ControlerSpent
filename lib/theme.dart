@@ -209,3 +209,166 @@ extension TemaDoContexto on BuildContext {
   Cores get cores => Theme.of(this).extension<Cores>()!;
   Tipos get tipos => Tipos(cores);
 }
+
+ThemeData temaApp(Cores p, Brightness brilho) {
+  final t = Tipos(p);
+  final base = ThemeData(
+    useMaterial3: true,
+    brightness: brilho,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: p.cacau,
+      brightness: brilho,
+      primary: p.cacau,
+      onPrimary: p.sobreCacau,
+      secondary: p.caramelo,
+      surface: p.papel,
+      onSurface: p.tinta,
+      onSurfaceVariant: p.tintaSuave,
+      outline: p.linha,
+      outlineVariant: p.linha,
+      secondaryContainer: p.bege,
+      onSecondaryContainer: p.cacau,
+      surfaceContainerLowest: p.superficie,
+      surfaceContainerLow: p.superficie,
+      surfaceContainer: p.superficie,
+      surfaceContainerHigh: p.superficie,
+      surfaceContainerHighest: p.bege,
+      error: p.negativo,
+    ),
+    scaffoldBackgroundColor: p.papel,
+    fontFamily: GoogleFonts.figtree().fontFamily,
+    extensions: [p],
+  );
+  final texto = base.textTheme.apply(bodyColor: p.tinta, displayColor: p.tinta);
+
+  final deslizar = SharedAxisPageTransitionsBuilder(
+    transitionType: SharedAxisTransitionType.horizontal,
+    fillColor: p.papel,
+  );
+  final campoBorda = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(Raio.medio),
+    borderSide: BorderSide(color: p.linha),
+  );
+
+  return base.copyWith(
+    pageTransitionsTheme: PageTransitionsTheme(builders: {
+      TargetPlatform.iOS: deslizar,
+      TargetPlatform.android: deslizar,
+      TargetPlatform.macOS: deslizar,
+    }),
+    textTheme: texto.copyWith(
+      displaySmall: t.display(),
+      titleLarge: t.secao(),
+      titleMedium: t.corpo(peso: FontWeight.w600),
+      bodyLarge: t.corpo(),
+      bodyMedium: t.corpo().copyWith(fontSize: 14),
+      labelLarge: t.corpo(peso: FontWeight.w600),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: p.papel,
+      foregroundColor: p.tinta,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleSpacing: Espaco.borda,
+      toolbarHeight: 56,
+      titleTextStyle: t.tituloTela(),
+    ),
+    cardTheme: CardThemeData(
+      color: p.superficie,
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Raio.medio),
+        side: BorderSide(color: p.linha),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      titleTextStyle: t.corpo(peso: FontWeight.w600),
+      subtitleTextStyle: t.apoio(),
+      iconColor: p.tintaSuave,
+      contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.l),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: p.superficie,
+      labelStyle: t.apoio(),
+      floatingLabelStyle: t.apoio(color: p.cacau),
+      hintStyle: t.apoio(color: p.tintaSuave.withValues(alpha: 0.7)),
+      helperStyle: t.apoio().copyWith(fontSize: 12),
+      prefixStyle: t.corpo(color: p.tintaSuave),
+      suffixStyle: t.corpo(color: p.tintaSuave),
+      contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: 13),
+      border: campoBorda,
+      enabledBorder: campoBorda,
+      focusedBorder: campoBorda.copyWith(borderSide: BorderSide(color: p.cacau, width: 1.6)),
+      errorBorder: campoBorda.copyWith(borderSide: BorderSide(color: p.negativo)),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: p.cacau,
+        foregroundColor: p.sobreCacau,
+        minimumSize: const Size.fromHeight(50),
+        textStyle: t.corpo(peso: FontWeight.w600).copyWith(fontSize: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.medio)),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: p.cacau,
+        backgroundColor: p.superficie,
+        minimumSize: const Size.fromHeight(46),
+        side: BorderSide(color: p.linha),
+        textStyle: t.corpo(peso: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.medio)),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: p.cacau,
+        minimumSize: const Size(48, 48),
+        textStyle: t.corpo(peso: FontWeight.w600).copyWith(fontSize: 14),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: p.cacau,
+      foregroundColor: p.sobreCacau,
+      elevation: 2,
+      highlightElevation: 0,
+      extendedTextStyle: t.corpo(peso: FontWeight.w600),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.medio)),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: SegmentedButton.styleFrom(
+        backgroundColor: p.superficie,
+        selectedBackgroundColor: p.cacau,
+        selectedForegroundColor: p.sobreCacau,
+        foregroundColor: p.tinta,
+        side: BorderSide(color: p.linha),
+        textStyle: t.corpo(peso: FontWeight.w600).copyWith(fontSize: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.pequeno)),
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: p.papel,
+      surfaceTintColor: Colors.transparent,
+      dragHandleColor: p.linha,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(Raio.grande))),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: p.papel,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.grande)),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: p.tinta,
+      contentTextStyle: t.corpo(color: p.papel).copyWith(fontSize: 14),
+      actionTextColor: p.bege,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.medio)),
+    ),
+    dividerTheme: DividerThemeData(color: p.linha, thickness: 1, space: 1),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: p.cacau),
+  );
+}
