@@ -680,3 +680,27 @@ class BotaoPrincipal extends StatelessWidget {
               ),
       );
 }
+
+/// Etiqueta curta e colorida (ex.: "+R$ 118 de lucro").
+class Pilula extends StatelessWidget {
+  final String texto;
+  final Color cor;
+  final IconData? icone;
+  const Pilula(this.texto, {super.key, required this.cor, this.icone});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: 6),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(Raio.pequeno),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (icone != null) ...[
+            Icon(icone, size: 16, color: cor),
+            const SizedBox(width: Espaco.xs),
+          ],
+          Text(texto, style: context.tipos.valor(size: 13, color: cor)),
+        ]),
+      );
+}
