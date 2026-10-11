@@ -69,3 +69,49 @@ class ItemReceita {
   factory ItemReceita.fromJson(Map<String, dynamic> j) =>
       ItemReceita(insumoId: j['insumoId'], qtd: (j['qtd'] as num).toDouble());
 }
+
+/// Produto vendido, com sua ficha técnica.
+class Produto {
+  final int id;
+  String nome;
+  String categoria;
+  int rendimento; // quantas unidades a receita rende
+  double margem; // 0.40 = 40% de lucro sobre o preço
+  int? precoVendaCentavos; // preço que ela realmente cobra (opcional)
+  List<ItemReceita> itens;
+  String? fotoBase64; // foto já reduzida (até 700 pixels de lado) para caber no aparelho
+
+  Produto({
+    int? id,
+    required this.nome,
+    this.categoria = '',
+    this.rendimento = 1,
+    this.margem = 0.4,
+    this.precoVendaCentavos,
+    List<ItemReceita>? itens,
+    this.fotoBase64,
+  })  : id = id ?? _nextId(),
+        itens = itens ?? [];
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nome': nome,
+        'categoria': categoria,
+        'rendimento': rendimento,
+        'margem': margem,
+        'precoVendaCentavos': precoVendaCentavos,
+        'itens': itens.map((e) => e.toJson()).toList(),
+        'foto': fotoBase64,
+      };
+
+  factory Produto.fromJson(Map<String, dynamic> j) => Produto(
+        id: j['id'],
+        nome: j['nome'],
+        categoria: j['categoria'] ?? '',
+        rendimento: j['rendimento'],
+        margem: (j['margem'] as num).toDouble(),
+        precoVendaCentavos: j['precoVendaCentavos'],
+        itens: (j['itens'] as List).map((e) => ItemReceita.fromJson(e)).toList(),
+        fotoBase64: j['foto'],
+      );
+}
