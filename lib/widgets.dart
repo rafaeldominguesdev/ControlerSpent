@@ -470,3 +470,24 @@ class _BotaoNav extends StatelessWidget {
     ]);
   }
 }
+
+/// Mantém a aba montada quando sai da tela: não recarrega nem repete a animação
+/// de entrada toda vez que ela volta.
+class ManterViva extends StatefulWidget {
+  final Widget child;
+  const ManterViva({super.key, required this.child});
+
+  @override
+  State<ManterViva> createState() => _ManterVivaState();
+}
+
+class _ManterVivaState extends State<ManterViva> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
