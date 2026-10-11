@@ -355,3 +355,31 @@ class Vazio extends StatelessWidget {
         ]),
       );
 }
+
+class ItemNav {
+  final IconData icone, iconeAtivo;
+  final String texto;
+  const ItemNav(this.icone, this.iconeAtivo, this.texto);
+}
+
+class _BotaoNav extends StatelessWidget {
+  final ItemNav item;
+  final double ativo; // 0 a 1
+  const _BotaoNav({required this.item, required this.ativo});
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = Color.lerp(context.cores.tintaSuave, context.cores.cacau, ativo)!;
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(ativo > 0.5 ? item.iconeAtivo : item.icone, color: cor, size: 22),
+      const SizedBox(height: 3),
+      Text(
+        item.texto,
+        style: context.tipos.apoio(color: cor).copyWith(
+              fontSize: 11,
+              fontWeight: ativo > 0.5 ? FontWeight.w700 : FontWeight.w500,
+            ),
+      ),
+    ]);
+  }
+}
