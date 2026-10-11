@@ -491,3 +491,63 @@ class _ManterVivaState extends State<ManterViva> with AutomaticKeepAliveClientMi
     return widget.child;
   }
 }
+
+/// Rodapé com o botão principal. Fica dentro do corpo da tela, então sobe junto
+/// com o teclado; com o teclado aberto, ganha um botão para fechá-lo (o teclado
+/// numérico do iPhone não tem tecla de fechar).
+class BarraInferior extends StatelessWidget {
+  final String texto;
+  final VoidCallback onPressed;
+
+  /// Dentro do corpo de um Scaffold o MediaQuery já vem sem o teclado, então a
+  /// tela precisa informar (lendo o MediaQuery acima do Scaffold).
+  final bool? tecladoAberto;
+  const BarraInferior(
+      {super.key, required this.texto, required this.onPressed, this.tecladoAberto});
+
+  @override
+  Widget build(BuildContext context) {
+    final teclado = tecladoAberto ?? MediaQuery.viewInsetsOf(context).bottom > 0;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.cores.papel,
+        border: Border(top: BorderSide(color: context.cores.linha)),
+      ),
+      child: SafeArea(
+        top: false,
+        bottom: !teclado,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.s, Espaco.borda, Espaco.s),
+          child: Row(children: [
+            AnimatedSize(
+              duration: Movimento.medio,
+              curve: Movimento.entrada,
+              child: teclado
+                  ? Padding(
+                      padding: const EdgeInsets.only(right: Espaco.s),
+                      child: IconButton.outlined(
+                        tooltip: 'Fechar teclado',
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(50, 50),
+                          side: BorderSide(color: context.cores.linha),
+                          backgroundColor: context.cores.superficie,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Raio.medio)),
+                        ),
+                        onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
+                        icon: Icon(Icons.keyboard_hide_outlined, color: context.cores.cacau),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            Expanded(
+              child: Pressionavel(
+                child: FilledButton(onPressed: onPressed, child: Text(texto)),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
