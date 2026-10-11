@@ -134,3 +134,21 @@ class Cores extends ThemeExtension<Cores> {
     );
   }
 }
+
+abstract class Espaco {
+  static const xs = 4.0, s = 8.0, m = 10.0, l = 14.0, xl = 20.0, xxl = 28.0, secao = 32.0;
+  static const borda = 16.0; // margem lateral das telas
+}
+
+abstract class Raio {
+  static const pequeno = 10.0, medio = 14.0, grande = 20.0;
+}
+
+abstract class Movimento {
+  static const rapido = Duration(milliseconds: 140);
+  static const medio = Duration(milliseconds: 260);
+  static const lento = Duration(milliseconds: 380);
+  static const pagina = Duration(milliseconds: 320); // troca de aba
+  static const entrada = Curves.easeOutCubic;
+  static const saida = Curves.easeInCubic;
+}
