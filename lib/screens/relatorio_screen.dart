@@ -26,8 +26,8 @@ bool _emAndamento(DateTime mes) {
 
 String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-/// O relatório como um extrato: o que entrou, o que saiu e o que ficou no mês
-/// e as vendas semana a semana.
+/// O relatório como um extrato: o que entrou, o que saiu e o que ficou no mês,
+/// as vendas semana a semana e os mais vendidos.
 class RelatorioScreen extends StatefulWidget {
   final Store store;
   const RelatorioScreen({super.key, required this.store});
@@ -133,6 +133,11 @@ class _ConteudoMes extends StatelessWidget {
           child: Text('Semana a semana', style: t.secao()),
         ),
         _Semanas(r: r, mes: mes),
+        Padding(
+          padding: const EdgeInsets.only(top: Espaco.secao, bottom: Espaco.m),
+          child: Text('Mais vendidos', style: t.secao()),
+        ),
+        _Ranking(store: store, r: r),
       ],
     ];
     return Column(
@@ -525,6 +530,56 @@ class _LinhaSemana extends StatelessWidget {
           ),
         ),
       ]),
+    );
+  }
+}
+
+/// Os três produtos que mais saíram no mês.
+class _Ranking extends StatelessWidget {
+  final Store store;
+  final ResumoMes r;
+  const _Ranking({required this.store, required this.r});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final fotos = {for (final p in store.produtos) p.id: p.fotoBase64};
+    final produtos = [
+      for (final p in r.porProduto())
+        if (p.vendidos > 0) p
+    ]..sort((a, b) => b.vendidos != a.vendidos
+        ? b.vendidos.compareTo(a.vendidos)
+        : b.faturamento.compareTo(a.faturamento));
+
+    return GrupoLista(
+      recuoDivisoria: 92,
+      children: [
+        for (final (i, p) in produtos.take(3).indexed)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
+            child: Row(children: [
+              SizedBox(
+                width: 22,
+                child: Text('${i + 1}',
+                    style: t.display(size: 22, color: i == 0 ? c.acao : c.tintaSuave)),
+              ),
+              const SizedBox(width: Espaco.s),
+              FotoProduto(fotos[p.id], tamanho: 36),
+              const SizedBox(width: Espaco.m),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(p.nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.corpo(peso: FontWeight.w600)),
+                  Text('${p.vendidos} vendidos', style: t.apoio().copyWith(fontSize: 12)),
+                ]),
+              ),
+              Text(comSinal(p.faturamento), style: t.valor(color: c.positivo)),
+            ]),
+          ),
+      ],
     );
   }
 }
