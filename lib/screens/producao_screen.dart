@@ -30,20 +30,31 @@ class ProducaoScreen extends StatelessWidget {
             if (store.estoque(p.id) > 0) (p, store.estoque(p.id)),
         ];
         final dias = agruparPorDia(registros);
+        final totalProntos = prontos.fold(0, (s, x) => s + x.$2);
+        final valemProntos = prontos.fold(0, (s, x) => s + x.$2 * (x.$1.precoVendaCentavos ?? 0));
 
         final blocos = <Widget>[
-          Rotulo('Hoje, ${formatoDiaCurto.format(hoje)}'),
+          const Rotulo('Prontos para vender'),
           const SizedBox(height: Espaco.xs),
-          Text('$feitosHoje', style: t.display(size: 36)),
-          const SizedBox(height: 2),
-          Text(feitosHoje == 1 ? 'unidade feita hoje.' : 'unidades feitas hoje.', style: t.apoio()),
-          const SizedBox(height: Espaco.l),
-          Pressionavel(
-            child: FilledButton.icon(
-              onPressed: () => registrarRapido(context, store, TipoLancamento.producao),
-              icon: const Icon(Icons.add, size: 22),
-              label: const Text('Registrar produção'),
-            ),
+          Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text('$totalProntos', style: t.display(size: 46)),
+                const SizedBox(width: Espaco.s),
+                Text(totalProntos == 1 ? 'unidade' : 'unidades', style: t.apoio()),
+              ]),
+          const SizedBox(height: Espaco.s),
+          Wrap(spacing: Espaco.s, runSpacing: Espaco.s, children: [
+            if (valemProntos > 0)
+              Pilula('valem ${reais(valemProntos)}', cor: c.positivo, icone: Icons.sell_outlined),
+            Pilula('$feitosHoje feitos hoje', cor: c.acao, icone: Icons.bakery_dining_outlined),
+          ]),
+          const SizedBox(height: Espaco.xl),
+          BotaoPrincipal(
+            texto: 'Registrar produção',
+            icone: Icons.add,
+            onPressed: () => registrarRapido(context, store, TipoLancamento.producao),
           ),
           const SizedBox(height: Espaco.s),
           Pressionavel(
@@ -54,12 +65,9 @@ class ProducaoScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: Espaco.secao),
-          Text('Prontos para vender', style: t.secao()),
-          const SizedBox(height: Espaco.m),
-          if (prontos.isEmpty)
-            Text('Nada no estoque. Quando registrar uma produção, ela aparece aqui.',
-                style: t.apoio())
-          else
+          if (prontos.isNotEmpty) ...[
+            Text('No estoque', style: t.secao()),
+            const SizedBox(height: Espaco.m),
             GrupoLista(recuoDivisoria: 64, children: [
               for (final (p, n) in prontos)
                 Padding(
@@ -73,16 +81,12 @@ class ProducaoScreen extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: t.corpo(peso: FontWeight.w600)),
                     ),
-                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text(n == 1 ? '1 pronto' : '$n prontos', style: t.valor()),
-                      if (p.precoVendaCentavos != null)
-                        Text('valem ${reais(n * p.precoVendaCentavos!)}',
-                            style: t.apoio(color: c.positivo).copyWith(fontSize: 12)),
-                    ]),
+                    Text(n == 1 ? '1 pronto' : '$n prontos', style: t.valor()),
                   ]),
                 ),
             ]),
-          const SizedBox(height: Espaco.secao),
+            const SizedBox(height: Espaco.secao),
+          ],
           if (dias.isEmpty)
             const Vazio(
               icone: Icons.bakery_dining_outlined,
