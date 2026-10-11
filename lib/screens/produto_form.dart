@@ -6,6 +6,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'insumos_screen.dart';
 import 'produtos_screen.dart';
 
 /// Foto larga no topo; sem foto, um espaço convidando a pôr uma.
@@ -121,6 +122,42 @@ class _Resumo extends StatelessWidget {
           ],
         ]),
       ),
+    );
+  }
+}
+
+class _EscolherInsumo extends StatelessWidget {
+  final Store store;
+  final Set<int> excluir;
+  const _EscolherInsumo({required this.store, required this.excluir});
+
+  @override
+  Widget build(BuildContext context) {
+    final lista = store.insumos.where((i) => !excluir.contains(i.id)).toList();
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.6,
+      child: Column(children: [
+        ListTile(
+          leading: const Icon(Icons.add_circle_outline),
+          title: const Text('Cadastrar novo ingrediente'),
+          onTap: () async {
+            final novo = await editarInsumo(context, store);
+            if (novo != null && context.mounted) Navigator.pop(context, novo);
+          },
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView(children: [
+            for (final i in lista)
+              ListTile(
+                title: Text(i.nome),
+                subtitle: Text(
+                    '${fmtQtd(i.qtdEmbalagem)} ${i.unidade.label} por ${reais(i.precoCentavos)}'),
+                onTap: () => Navigator.pop(context, i),
+              ),
+          ]),
+        ),
+      ]),
     );
   }
 }
