@@ -165,3 +165,34 @@ class LinhaConta extends StatelessWidget {
     );
   }
 }
+
+/// Linha tracejada, como no fim de uma nota.
+class Tracejado extends StatelessWidget {
+  const Tracejado({super.key});
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 11,
+        child: CustomPaint(
+            painter: _TracejadoPainter(context.cores.linha), size: const Size(double.infinity, 11)),
+      );
+}
+
+class _TracejadoPainter extends CustomPainter {
+  final Color cor;
+  _TracejadoPainter(this.cor);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = cor
+      ..strokeWidth = 1.2;
+    final y = size.height / 2;
+    for (var x = 0.0; x < size.width; x += 7) {
+      canvas.drawLine(Offset(x, y), Offset((x + 3.5).clamp(0, size.width), y), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TracejadoPainter antigo) => antigo.cor != cor;
+}
