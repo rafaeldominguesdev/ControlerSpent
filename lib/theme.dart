@@ -136,6 +136,12 @@ class Cores extends ThemeExtension<Cores> {
   }
 }
 
+/// Cores da logo (iguais no claro e no escuro).
+abstract class Marca {
+  static const marinho = Color(0xFF0A1F5B); // barras da logo
+  static const inicio = Color(0xFF3555FE); // fundo liso de onde o degradê da abertura nasce
+}
+
 abstract class Espaco {
   static const xs = 4.0, s = 8.0, m = 10.0, l = 14.0, xl = 20.0, xxl = 28.0, secao = 32.0;
   static const borda = 16.0; // margem lateral das telas

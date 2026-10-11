@@ -28,6 +28,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/logo/abertura.png
+    - assets/logo/abertura_fundo.png
 
 # Ícone do app (gerado com: dart run flutter_launcher_icons). Desenho em assets/logo/*.svg
 flutter_launcher_icons:

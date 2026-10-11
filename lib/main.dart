@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'abertura.dart';
 import 'exemplo.dart';
 import 'models.dart';
 import 'screens/insumos_screen.dart';
@@ -21,6 +23,10 @@ Future<void> main() async {
   if (const bool.fromEnvironment('EXEMPLO') && store.produtos.isEmpty) {
     await carregarExemplo(store);
   }
+  // Espera as fontes (até 2 s) com a tela nativa ainda na frente: a abertura
+  // já aparece com a letra certa, sem trocar de fonte no meio.
+  await GoogleFonts.pendingFonts([GoogleFonts.newsreader(), GoogleFonts.figtree()])
+      .timeout(const Duration(seconds: 2), onTimeout: () => const []);
   runApp(ConfeitariaApp(store: store));
 }
 
@@ -60,7 +66,7 @@ class ConfeitariaApp extends StatelessWidget {
           // para os números e as listas não quebrarem.
           child: MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: child!),
         ),
-        home: Home(store: store),
+        home: Abertura(child: Home(store: store)),
       ),
     );
   }
