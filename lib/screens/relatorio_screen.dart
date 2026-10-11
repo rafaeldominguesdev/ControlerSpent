@@ -375,3 +375,81 @@ class _Ranking extends StatelessWidget {
     );
   }
 }
+
+class _Rosca extends StatelessWidget {
+  final List<PorProduto> produtos;
+  final double total;
+  const _Rosca({required this.produtos, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final lista = [...produtos]..sort((a, b) => b.faturamento.compareTo(a.faturamento));
+    // Mais de 5 fatias vira ruído: o resto entra em "Outros".
+    final principais = lista.take(4).toList();
+    final outros = lista.skip(4).fold(0.0, (s, p) => s + p.faturamento);
+    final fatias = [
+      for (final p in principais) (p.nome, p.faturamento),
+      if (outros > 0) ('Outros', outros),
+    ];
+    Color cor(int i) => c.grafico[i % c.grafico.length];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Espaco.l),
+        child: Row(children: [
+          SizedBox(
+            width: 116,
+            height: 116,
+            child: Stack(alignment: Alignment.center, children: [
+              PieChart(
+                PieChartData(
+                  startDegreeOffset: -90,
+                  centerSpaceRadius: 36,
+                  sectionsSpace: 3,
+                  sections: [
+                    for (final (i, f) in fatias.indexed)
+                      PieChartSectionData(value: f.$2, color: cor(i), radius: 20, showTitle: false),
+                  ],
+                ),
+                duration: Movimento.lento,
+                curve: Movimento.entrada,
+              ),
+              Column(mainAxisSize: MainAxisSize.min, children: [
+                Text('vendas', style: t.apoio().copyWith(fontSize: 11)),
+                Text(_realCurto.format(total / 100), style: t.valor(size: 13)),
+              ]),
+            ]),
+          ),
+          const SizedBox(width: Espaco.l),
+          Expanded(
+            child: Column(children: [
+              for (final (i, f) in fatias.indexed)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(children: [
+                    Container(
+                      width: 9,
+                      height: 9,
+                      decoration:
+                          BoxDecoration(color: cor(i), borderRadius: BorderRadius.circular(3)),
+                    ),
+                    const SizedBox(width: Espaco.s),
+                    Expanded(
+                      child: Text(f.$1,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: t.apoio(color: c.tinta)),
+                    ),
+                    Text(total == 0 ? '' : '${(f.$2 / total * 100).round()}%',
+                        style: t.valor(size: 13)),
+                  ]),
+                ),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+}
