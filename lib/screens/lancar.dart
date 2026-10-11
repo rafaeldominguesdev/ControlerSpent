@@ -78,32 +78,24 @@ class LinhaLancamento extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.cores;
     final t = context.tipos;
-    final pagamento = l.pagamento == null ? '' : ', no ${l.pagamento!.label.toLowerCase()}';
-    final (descricao, valor, corValor, legenda) = switch (l.tipo) {
+    final pagamento = l.pagamento?.label.toLowerCase() ?? '';
+    // Uma linha curta embaixo do nome e um só valor à direita (o resto está no relatório).
+    final (descricao, valor, corValor) = switch (l.tipo) {
       TipoLancamento.venda => (
-          '${l.cliente == null ? '' : 'Para ${l.cliente}, '}'
-              '${l.vendidos} a ${reais(l.precoUnitCentavos)}$pagamento',
+          [
+            if (l.cliente != null) l.cliente!,
+            '${l.vendidos} un',
+            if (pagamento.isNotEmpty) pagamento
+          ].join(' · '),
           '+${reais(l.faturamento)}',
           c.positivo,
-          'lucro ${reais(l.lucro)}',
         ),
-      TipoLancamento.perda => (
-          'Perdeu ${l.feitos}',
-          reais(l.lucro),
-          c.negativo,
-          'de custo',
-        ),
-      TipoLancamento.producao => (
-          'Fez ${l.feitos}',
-          '+${l.feitos} un',
-          c.tinta,
-          'custo ${reais(l.custo)}',
-        ),
+      TipoLancamento.perda => ('Perdeu ${l.feitos}', reais(l.lucro), c.negativo),
+      TipoLancamento.producao => ('Fez ${l.feitos}', '+${l.feitos} un', c.tinta),
       TipoLancamento.lote => (
           'Fez ${l.feitos} e vendeu ${l.vendidos}',
           reais(l.faturamento),
-          c.tinta,
-          'lucro ${reais(l.lucro)}',
+          c.tinta
         ),
     };
 
@@ -129,17 +121,7 @@ class LinhaLancamento extends StatelessWidget {
             ]),
           ),
           const SizedBox(width: Espaco.s),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(valor, style: t.valor(color: corValor)),
-            Text(legenda,
-                style: t
-                    .apoio(
-                        color: l.tipo == TipoLancamento.perda ||
-                                l.lucro < 0 && l.tipo == TipoLancamento.venda
-                            ? c.negativo
-                            : null)
-                    .copyWith(fontSize: 12)),
-          ]),
+          Text(valor, style: t.valor(color: corValor)),
         ]),
       ),
     );
