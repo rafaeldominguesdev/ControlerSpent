@@ -117,3 +117,37 @@ class Produto {
 }
 
 enum StatusPreco { lucrativo, atencao, prejuizo, semPreco }
+
+/// Resultado do cálculo de um produto, com a mesma regra da planilha.
+class Calculo {
+  final double custoReceita; // centavos, receita inteira
+  final double custoUnitario; // centavos
+  final double precoSugerido; // centavos
+  final int? precoVenda;
+
+  Calculo(this.custoReceita, this.custoUnitario, this.precoSugerido, this.precoVenda);
+
+  double? get lucroUnitario => precoVenda == null ? null : precoVenda! - custoUnitario;
+
+  double? get margemReal =>
+      (precoVenda == null || precoVenda == 0) ? null : lucroUnitario! / precoVenda!;
+
+  StatusPreco get status {
+    final m = margemReal;
+    if (m == null) return StatusPreco.semPreco;
+    if (m < 0) return StatusPreco.prejuizo;
+    if (m < 0.30) return StatusPreco.atencao;
+    return StatusPreco.lucrativo;
+  }
+
+  static Calculo de(Produto p, Map<int, Insumo> insumos) {
+    var total = 0.0;
+    for (final it in p.itens) {
+      final ins = insumos[it.insumoId];
+      if (ins != null) total += ins.custoPorUnidade * it.qtd;
+    }
+    final un = p.rendimento > 0 ? total / p.rendimento : total;
+    final margem = p.margem.clamp(0.0, 0.95);
+    return Calculo(total, un, un / (1 - margem), p.precoVendaCentavos);
+  }
+}
