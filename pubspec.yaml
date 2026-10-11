@@ -29,17 +29,17 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-# Ícone do app (gerado com: dart run flutter_launcher_icons). Desenho em assets/icone/*.svg
+# Ícone do app (gerado com: dart run flutter_launcher_icons). Desenho em assets/logo/*.svg
 flutter_launcher_icons:
   ios: true
   android: true
-  image_path: "assets/icone/icone.png"
+  image_path: "assets/logo/icone.png"
   remove_alpha_ios: true
-  adaptive_icon_background: "#6B4632"
-  adaptive_icon_foreground: "assets/icone/icone_frente.png"
+  adaptive_icon_background: "assets/logo/icone_fundo.png"
+  adaptive_icon_foreground: "assets/logo/icone_frente.png"
   min_sdk_android: 21
   web:
     generate: true
-    image_path: "assets/icone/icone.png"
-    background_color: "#F5EFE6"
-    theme_color: "#6B4632"
+    image_path: "assets/logo/icone.png"
+    background_color: "#3555FE"
+    theme_color: "#366FFD"
