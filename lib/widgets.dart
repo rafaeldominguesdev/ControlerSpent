@@ -1,3 +1,4 @@
+import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -547,6 +548,37 @@ class BarraInferior extends StatelessWidget {
             ),
           ]),
         ),
+      ),
+    );
+  }
+}
+
+/// Foto do produto, ou um desenho de bolo quando não tem foto.
+class FotoProduto extends StatelessWidget {
+  final String? base64;
+  final double tamanho;
+  final double raio;
+  const FotoProduto(this.base64, {super.key, this.tamanho = 48, this.raio = Raio.pequeno});
+
+  static final _cache = <String, Uint8List>{};
+
+  static Uint8List bytes(String b64) => _cache.putIfAbsent(b64, () => base64Decode(b64));
+
+  @override
+  Widget build(BuildContext context) {
+    final b = base64;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(raio),
+      child: SizedBox(
+        width: tamanho,
+        height: tamanho,
+        child: b == null
+            ? ColoredBox(
+                color: context.cores.bege,
+                child: Icon(Icons.cake_outlined,
+                    size: tamanho * 0.42, color: context.cores.tintaSuave),
+              )
+            : Image.memory(bytes(b), fit: BoxFit.cover, gaplessPlayback: true),
       ),
     );
   }
