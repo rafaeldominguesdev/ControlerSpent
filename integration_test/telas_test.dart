@@ -32,22 +32,43 @@ void main() {
   }
 
   testWidgets('prints das telas', (t) async {
-    app.main();
+    // A abertura animada não aparece em print aqui: o teste não anda o relógio
+    // como o celular. Para ver, abra o app no simulador e tire prints em sequência.
+    await app.main();
     await calma(t);
-    await Future<void>.delayed(const Duration(seconds: 2)); // fontes
+    await Future<void>.delayed(const Duration(seconds: 1));
     await calma(t);
-    await binding.takeScreenshot('01_relatorio');
 
-    // Vendas: só vendas, com cliente.
-    await aba(t, 'Vendas');
-    await binding.takeScreenshot('02_vendas');
-    await t.tap(find.text('Registrar venda'));
+    // O app abre em Vendas, com os produtos à mão (em grade e em lista).
+    await binding.takeScreenshot('01_vendas');
+    await t.tap(find.byTooltip('Ver em lista'));
     await calma(t);
-    await t.tap(find.text('Brigadeiro gourmet').last);
+    await binding.takeScreenshot('01b_vendas_lista');
+    await t.tap(find.text('Brigadeiro gourmet').first);
     await calma(t);
+    await binding.takeScreenshot('02_venda_quantidade');
     await rolar(t, 300, onde: find.byType(SingleChildScrollView).last);
     await binding.takeScreenshot('03_venda_cliente');
     await fecharFolha(t);
+    await t.tap(find.text('Histórico'));
+    await calma(t);
+    await binding.takeScreenshot('03a_vendas_historico');
+    await t.tap(find.text('Vender'));
+    await calma(t);
+    await t.tap(find.byTooltip('Ver em grade'));
+    await calma(t);
+
+    // Relatório: o extrato do mês, as semanas e o mês anterior.
+    await aba(t, 'Relatório');
+    await binding.takeScreenshot('03b_relatorio');
+    await t.dragFrom(const Offset(200, 600), const Offset(0, -420));
+    await calma(t);
+    await binding.takeScreenshot('03c_relatorio_semanas');
+    await t.dragFrom(const Offset(200, 300), const Offset(0, 420));
+    await calma(t);
+    await t.tap(find.byTooltip('Mês anterior'));
+    await calma(t);
+    await binding.takeScreenshot('03d_relatorio_mes_anterior');
 
     // Produção: registrar com os atalhos de receita.
     await aba(t, 'Produção');
@@ -79,22 +100,17 @@ void main() {
     await calma(t);
     await binding.takeScreenshot('11_produtos_com_pao_de_mel');
 
-    // Modo escuro.
-    await t.tap(find.byTooltip('Configurações').first);
+    // Aba Mais: ingredientes, receitas prontas e configurações.
+    await aba(t, 'Mais');
+    await binding.takeScreenshot('12_mais');
+    await t.tap(find.text('Configurações'));
     await calma(t);
-    await t.tap(find.text('Escuro').last);
-    await calma(t);
+    await binding.takeScreenshot('13_configuracoes');
     await t.tap(find.byType(BackButton));
     await calma(t);
-    await aba(t, 'Produção');
-    await binding.takeScreenshot('12_producao_escuro');
-    await aba(t, 'Vendas');
-    await binding.takeScreenshot('13_vendas_escuro');
-
-    await t.tap(find.byTooltip('Configurações').first);
+    await t.tap(find.text('Ingredientes e embalagens'));
     await calma(t);
-    await t.tap(find.text('Automático').last);
-    await calma(t);
+    await binding.takeScreenshot('14_ingredientes');
     await t.tap(find.byType(BackButton));
     await calma(t);
   });
