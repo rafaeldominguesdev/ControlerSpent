@@ -206,3 +206,42 @@ class _VendasPorDia extends StatelessWidget {
     });
   }
 }
+
+/// Lucro, margem e quantidade lado a lado.
+class _FaixaNumeros extends StatelessWidget {
+  final ResumoMes r;
+  const _FaixaNumeros({required this.r});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final margem = r.faturamento == 0 ? 0.0 : r.lucroBolso / r.faturamento * 100;
+    final corMargem = margem >= 30 ? c.positivo : (margem >= 0 ? c.atencao : c.negativo);
+    Widget item(String rotulo, Widget valor) => Expanded(
+          child: Column(children: [
+            Text(rotulo, style: t.apoio().copyWith(fontSize: 12)),
+            const SizedBox(height: 2),
+            valor,
+          ]),
+        );
+    final separador = Container(width: 1, height: 34, color: c.linha);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Espaco.m),
+        child: Row(children: [
+          item(
+            'Lucro',
+            ValorAnimado(r.lucroBolso,
+                style: t.valor(size: 17, color: r.lucroBolso < 0 ? c.negativo : c.positivo)),
+          ),
+          separador,
+          item('Margem',
+              Text('${margem.toStringAsFixed(0)}%', style: t.valor(size: 17, color: corMargem))),
+          separador,
+          item('Vendidos', Text('${r.vendidos}', style: t.valor(size: 17))),
+        ]),
+      ),
+    );
+  }
+}
