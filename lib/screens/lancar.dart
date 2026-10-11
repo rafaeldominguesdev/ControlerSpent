@@ -32,7 +32,8 @@ String nomeDia(DateTime d) {
   final hoje = DateTime.now();
   if (mesmoDia(d, hoje)) return 'Hoje';
   if (mesmoDia(d, hoje.subtract(const Duration(days: 1)))) return 'Ontem';
-  return formatoDia.format(d);
+  final texto = formatoDia.format(d);
+  return texto[0].toUpperCase() + texto.substring(1);
 }
 
 String _plural(int n, String um, String varios) => n == 1 ? '1 $um' : '$n $varios';

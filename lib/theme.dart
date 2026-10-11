@@ -193,11 +193,10 @@ class Tipos {
         color: c.tinta,
       );
 
-  /// Rótulo pequeno em caixa alta, com espaçamento aberto.
+  /// Rótulo pequeno acima de um bloco.
   TextStyle rotulo({Color? color}) => GoogleFonts.figtree(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.0,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
         color: color ?? c.tintaSuave,
       );
 

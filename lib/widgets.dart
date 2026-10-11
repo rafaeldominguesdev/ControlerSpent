@@ -98,15 +98,14 @@ class _PressionavelState extends State<Pressionavel> {
   }
 }
 
-/// Rótulo pequeno em caixa alta ("HOJE", "CONTA DO MÊS").
+/// Rótulo pequeno acima de um bloco ("Hoje", "Conta do mês").
 class Rotulo extends StatelessWidget {
   final String texto;
   final Color? cor;
   const Rotulo(this.texto, {super.key, this.cor});
 
   @override
-  Widget build(BuildContext context) =>
-      Text(texto.toUpperCase(), style: context.tipos.rotulo(color: cor));
+  Widget build(BuildContext context) => Text(texto, style: context.tipos.rotulo(color: cor));
 }
 
 /// Várias linhas dentro de uma única superfície, separadas por fios.
