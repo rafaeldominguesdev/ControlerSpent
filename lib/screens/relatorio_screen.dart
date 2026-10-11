@@ -65,6 +65,61 @@ class _SeletorMes extends StatelessWidget {
       );
 }
 
+/// Vendas do mês em verde, a comparação com o mês anterior e o gráfico por dia.
+class _Destaque extends StatelessWidget {
+  final Store store;
+  final ResumoMes r;
+  final DateTime mes;
+  const _Destaque({required this.store, required this.r, required this.mes});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final anterior = DateTime(mes.year, mes.month - 1);
+    final ateDia = _emAndamento(mes) ? DateTime.now().day : null;
+    final vendasAntes = _vendasDoMes(store, anterior, ateDia: ateDia);
+    final variacao = vendasAntes > 0 ? (r.faturamento - vendasAntes) / vendasAntes : null;
+
+    Widget comparacao() {
+      if (variacao == null) {
+        return Text(
+          r.faturamento == 0 ? 'Nenhuma venda registrada ainda.' : 'Sem vendas no mês anterior.',
+          style: t.apoio(),
+        );
+      }
+      final pct = (variacao.abs() * 100).round();
+      final subiu = variacao >= 0;
+      final cor = subiu ? c.positivo : c.negativo;
+      final periodo = ateDia == null ? '' : ' no mesmo período';
+      return Row(children: [
+        Icon(subiu ? Icons.trending_up : Icons.trending_down, size: 18, color: cor),
+        const SizedBox(width: Espaco.xs),
+        Flexible(
+          child: Text(
+            pct == 0
+                ? 'Igual a ${_mesNome.format(anterior)}$periodo'
+                : '$pct% ${subiu ? 'acima' : 'abaixo'} de ${_mesNome.format(anterior)}$periodo',
+            style: t.apoio(color: cor).copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ]);
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Vendas do mês', style: t.apoio()),
+      const SizedBox(height: 2),
+      ValorAnimado(r.faturamento, style: t.display(size: 40, color: c.positivo)),
+      const SizedBox(height: Espaco.xs),
+      comparacao(),
+      if (r.itens.isNotEmpty) ...[
+        const SizedBox(height: Espaco.l),
+        _VendasPorDia(r: r, mes: mes),
+      ],
+    ]);
+  }
+}
+
 /// Uma barra por dia do mês, sobre um trilho verde-claro (até hoje).
 class _VendasPorDia extends StatelessWidget {
   final ResumoMes r;
