@@ -500,3 +500,116 @@ class _ContasDoMes extends StatelessWidget {
     );
   }
 }
+
+/// Lucro mês a mês, com o valor em cima de cada barra.
+class _Meses extends StatelessWidget {
+  final Store store;
+  final DateTime ate;
+  const _Meses({required this.store, required this.ate});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final meses = [for (var i = 5; i >= 0; i--) DateTime(ate.year, ate.month - i)];
+    final lucros = [for (final m in meses) store.resumo(m.year, m.month).lucroBolso / 100];
+    final maior = lucros.fold(0.0, (a, b) => b > a ? b : a);
+    final menor = lucros.fold(0.0, (a, b) => b < a ? b : a);
+    final melhor = lucros.indexOf(maior);
+    final temDados = lucros.any((v) => v != 0);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.xl, Espaco.l, Espaco.m),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            height: 150,
+            child: BarChart(
+              BarChartData(
+                maxY: maior <= 0 ? 100 : maior * 1.3,
+                minY: menor < 0 ? menor * 1.3 : 0,
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border(bottom: BorderSide(color: c.linha)),
+                ),
+                barTouchData: BarTouchData(
+                  enabled: false,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (_) => Colors.transparent,
+                    tooltipPadding: EdgeInsets.zero,
+                    tooltipMargin: 4,
+                    getTooltipItem: (grupo, _, rod, __) => BarTooltipItem(
+                      _curto(rod.toY),
+                      t.valor(
+                        size: 11,
+                        color: grupo.x == meses.length - 1 ? c.positivo : c.tintaSuave,
+                        peso: grupo.x == meses.length - 1 ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(),
+                  rightTitles: const AxisTitles(),
+                  leftTitles: const AxisTitles(),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 26,
+                      getTitlesWidget: (v, meta) {
+                        final i = v.toInt();
+                        final atual = i == meses.length - 1;
+                        return Padding(
+                          padding: const EdgeInsets.only(top: Espaco.s),
+                          child: Text(
+                            _mesCurto.format(meses[i]).replaceAll('.', ''),
+                            style: t.apoio(color: atual ? c.tinta : c.tintaSuave).copyWith(
+                                fontSize: 12,
+                                fontWeight: atual ? FontWeight.w700 : FontWeight.w400),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: [
+                  for (var i = 0; i < lucros.length; i++)
+                    BarChartGroupData(
+                      x: i,
+                      showingTooltipIndicators: lucros[i] == 0 ? const [] : const [0],
+                      barRods: [
+                        BarChartRodData(
+                          toY: lucros[i],
+                          width: 22,
+                          color: lucros[i] < 0
+                              ? c.negativo
+                              : (i == lucros.length - 1 ? c.positivo : c.dinheiro),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(lucros[i] >= 0 ? 6 : 0),
+                            bottom: Radius.circular(lucros[i] < 0 ? 6 : 0),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              duration: Movimento.lento,
+              curve: Movimento.entrada,
+            ),
+          ),
+          const SizedBox(height: Espaco.m),
+          Text(
+            [
+              temDados && maior > 0
+                  ? 'Melhor mês: ${_mesNome.format(meses[melhor])} (${reais(maior * 100)}).'
+                  : 'Ainda não há vendas nesses meses.',
+              if (_emAndamento(ate)) '${_cap(_mesNome.format(ate))} está em andamento.',
+            ].join(' '),
+            style: t.apoio(),
+          ),
+        ]),
+      ),
+    );
+  }
+}
