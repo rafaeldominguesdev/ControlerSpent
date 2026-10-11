@@ -4,6 +4,40 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 
+class _LinhaInsumo extends StatelessWidget {
+  final Insumo ins;
+  final Store store;
+  const _LinhaInsumo({required this.ins, required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    // Grama sozinha dá centavos quebrados; a cada 100 g é mais fácil de comparar.
+    final porUnidade = ins.unidade == Unidade.un;
+    final custo = porUnidade ? ins.custoPorUnidade : ins.custoPorUnidade * 100;
+    final legenda = porUnidade ? 'cada' : 'a cada 100 ${ins.unidade.label}';
+    return InkWell(
+      onTap: () => editarInsumo(context, store, ins),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
+        child: Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(ins.nome, style: context.tipos.corpo(peso: FontWeight.w600)),
+              Text(
+                  '${fmtQtd(ins.qtdEmbalagem)} ${ins.unidade.label} por ${reais(ins.precoCentavos)}',
+                  style: context.tipos.apoio().copyWith(fontSize: 12)),
+            ]),
+          ),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(reais(custo), style: context.tipos.valor()),
+            Text(legenda, style: context.tipos.apoio().copyWith(fontSize: 11)),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
 /// Abre o formulário de cadastro/edição. Devolve o insumo salvo, se houver.
 Future<Insumo?> editarInsumo(BuildContext context, Store store, [Insumo? atual]) {
   return showModalBottomSheet<Insumo>(
