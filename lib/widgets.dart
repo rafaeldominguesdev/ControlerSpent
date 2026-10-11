@@ -314,3 +314,44 @@ class Contador extends StatelessWidget {
     ]);
   }
 }
+
+/// Tela vazia com uma explicação curta e, se fizer sentido, um botão.
+class Vazio extends StatelessWidget {
+  final IconData icone;
+  final String titulo, texto;
+  final String? acao, acaoSecundaria;
+  final VoidCallback? onAcao, onAcaoSecundaria;
+  const Vazio({
+    super.key,
+    required this.icone,
+    required this.titulo,
+    required this.texto,
+    this.acao,
+    this.onAcao,
+    this.acaoSecundaria,
+    this.onAcaoSecundaria,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.xxl, vertical: Espaco.xl),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(color: context.cores.bege, shape: BoxShape.circle),
+            child: Icon(icone, color: context.cores.cacau, size: 24),
+          ),
+          const SizedBox(height: Espaco.l),
+          Text(titulo, textAlign: TextAlign.center, style: context.tipos.secao()),
+          const SizedBox(height: Espaco.s),
+          Text(texto, textAlign: TextAlign.center, style: context.tipos.apoio()),
+          if (acao != null) ...[
+            const SizedBox(height: Espaco.xl),
+            OutlinedButton(onPressed: onAcao, child: Text(acao!)),
+          ],
+          if (acaoSecundaria != null)
+            TextButton(onPressed: onAcaoSecundaria, child: Text(acaoSecundaria!)),
+        ]),
+      );
+}
