@@ -37,6 +37,84 @@ String nomeDia(DateTime d) {
 
 String _plural(int n, String um, String varios) => n == 1 ? '1 $um' : '$n $varios';
 
+class LinhaLancamento extends StatelessWidget {
+  final Store store;
+  final Lancamento l;
+  final String? foto;
+  const LinhaLancamento({super.key, required this.store, required this.l, this.foto});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final pagamento = l.pagamento == null ? '' : ', no ${l.pagamento!.label.toLowerCase()}';
+    final (descricao, valor, corValor, legenda) = switch (l.tipo) {
+      TipoLancamento.venda => (
+          '${l.cliente == null ? '' : 'Para ${l.cliente}, '}'
+              '${l.vendidos} a ${reais(l.precoUnitCentavos)}$pagamento',
+          '+${reais(l.faturamento)}',
+          c.positivo,
+          'lucro ${reais(l.lucro)}',
+        ),
+      TipoLancamento.perda => (
+          'Perdeu ${l.feitos}',
+          reais(l.lucro),
+          c.negativo,
+          'de custo',
+        ),
+      TipoLancamento.producao => (
+          'Fez ${l.feitos}',
+          '+${l.feitos} un',
+          c.tinta,
+          'custo ${reais(l.custo)}',
+        ),
+      TipoLancamento.lote => (
+          'Fez ${l.feitos} e vendeu ${l.vendidos}',
+          reais(l.faturamento),
+          c.tinta,
+          'lucro ${reais(l.lucro)}',
+        ),
+    };
+
+    return InkWell(
+      onTap: () => editarLancamento(context, store, l),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
+        child: Row(children: [
+          FotoProduto(foto, tamanho: 38),
+          const SizedBox(width: Espaco.m),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l.produtoNome,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.corpo(peso: FontWeight.w600)),
+              Text(descricao, style: t.apoio().copyWith(fontSize: 12)),
+              if (l.obs != null)
+                Text(l.obs!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.apoio().copyWith(fontSize: 12, fontStyle: FontStyle.italic)),
+            ]),
+          ),
+          const SizedBox(width: Espaco.s),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(valor, style: t.valor(color: corValor)),
+            Text(legenda,
+                style: t
+                    .apoio(
+                        color: l.tipo == TipoLancamento.perda ||
+                                l.lucro < 0 && l.tipo == TipoLancamento.venda
+                            ? c.negativo
+                            : null)
+                    .copyWith(fontSize: 12)),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
 /// Registro em poucos toques: escolhe o produto, a quantidade e (na venda)
 /// pagamento e cliente.
 Future<void> registrarRapido(BuildContext context, Store store, TipoLancamento tipo) async {
