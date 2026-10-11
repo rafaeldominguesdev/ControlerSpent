@@ -387,3 +387,207 @@ class _Sugestao extends StatelessWidget {
     );
   }
 }
+
+class _EditarLancamento extends StatefulWidget {
+  final Store store;
+  final Lancamento atual;
+  const _EditarLancamento({required this.store, required this.atual});
+
+  @override
+  State<_EditarLancamento> createState() => _EditarLancamentoState();
+}
+
+class _EditarLancamentoState extends State<_EditarLancamento> {
+  final _form = GlobalKey<FormState>();
+  late final Lancamento a = widget.atual;
+  late Produto? _produto = widget.store.produtos.where((p) => p.id == a.produtoId).firstOrNull;
+  late DateTime _data = a.data;
+  late Pagamento _pagamento = a.pagamento ?? Pagamento.pix;
+  late final _qtd =
+      TextEditingController(text: '${a.tipo == TipoLancamento.venda ? a.vendidos : a.feitos}');
+  late final _preco = TextEditingController(
+      text: (a.precoUnitCentavos / 100).toStringAsFixed(2).replaceAll('.', ','));
+  late final _cliente = TextEditingController(text: a.cliente ?? '');
+  late final _obs = TextEditingController(text: a.obs ?? '');
+
+  Store get store => widget.store;
+  bool get _venda => a.tipo == TipoLancamento.venda;
+
+  String get _titulo => switch (a.tipo) {
+        TipoLancamento.venda => 'Editar venda',
+        TipoLancamento.perda => 'Editar perda',
+        _ => 'Editar produção',
+      };
+
+  Lancamento? _montar() {
+    final p = _produto;
+    final qtd = int.tryParse(_qtd.text) ?? 0;
+    if (p == null) return null;
+    // Mesmo produto: mantém o custo do dia. Produto trocado: custo de hoje.
+    final custo = p.id == a.produtoId ? a.custoUnitCentavos : store.calcular(p).custoUnitario;
+    final taxa = _pagamento == a.pagamento ? a.taxaPct : store.ajustes.taxa(_pagamento);
+    return Lancamento(
+      id: a.id,
+      produtoId: p.id,
+      produtoNome: p.nome,
+      data: _data,
+      feitos: qtd,
+      vendidos: _venda ? qtd : 0,
+      precoUnitCentavos: _venda ? (parseCentavos(_preco.text) ?? 0) : 0,
+      custoUnitCentavos: custo,
+      taxaPct: _venda ? taxa : 0,
+      tipo: a.tipo,
+      pagamento: _venda ? _pagamento : null,
+      cliente: _venda && _cliente.text.trim().isNotEmpty ? _cliente.text.trim() : null,
+      obs: _venda && _obs.text.trim().isNotEmpty ? _obs.text.trim() : null,
+    );
+  }
+
+  Future<void> _salvar() async {
+    if (!_form.currentState!.validate()) return;
+    await store.salvarLancamento(_montar()!);
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _apagar() async {
+    final c = context.cores;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Apagar este registro?'),
+        content: const Text('Ele sai do histórico e do relatório.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: c.negativo),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Apagar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await store.removerLancamento(a);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final previa = _montar();
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          Espaco.borda, 0, Espaco.borda, MediaQuery.viewInsetsOf(context).bottom + Espaco.xl),
+      child: Form(
+        key: _form,
+        onChanged: () => setState(() {}),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(_titulo, style: t.secao()),
+              const SizedBox(height: Espaco.l),
+              DropdownButtonFormField<Produto>(
+                initialValue: _produto,
+                decoration: const InputDecoration(labelText: 'Produto'),
+                borderRadius: BorderRadius.circular(Raio.medio),
+                dropdownColor: c.superficie,
+                items: [
+                  for (final p in store.produtos) DropdownMenuItem(value: p, child: Text(p.nome)),
+                ],
+                onChanged: (p) => setState(() => _produto = p),
+                validator: (v) => v == null ? 'Escolha o produto' : null,
+              ),
+              const SizedBox(height: Espaco.m),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(alignment: Alignment.centerLeft),
+                icon: const Icon(Icons.event_outlined),
+                label: Text(formatoDia.format(_data)),
+                onPressed: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    initialDate: _data,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (d != null) {
+                    setState(
+                        () => _data = DateTime(d.year, d.month, d.day, _data.hour, _data.minute));
+                  }
+                },
+              ),
+              const SizedBox(height: Espaco.m),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _qtd,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Quantidade'),
+                    validator: (v) =>
+                        (int.tryParse(v ?? '') ?? 0) > 0 ? null : 'Informe a quantidade',
+                  ),
+                ),
+                if (_venda) ...[
+                  const SizedBox(width: Espaco.m),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _preco,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration:
+                          const InputDecoration(labelText: 'Preço de cada', prefixText: 'R\$ '),
+                      validator: (v) => parseCentavos(v ?? '') == null ? 'Informe o preço' : null,
+                    ),
+                  ),
+                ],
+              ]),
+              if (_venda) ...[
+                const SizedBox(height: Espaco.m),
+                SeletorOpcoes<Pagamento>(
+                  opcoes: [for (final p in Pagamento.values) (p, p.label)],
+                  valor: _pagamento,
+                  onChanged: (p) => setState(() => _pagamento = p),
+                ),
+                const SizedBox(height: Espaco.m),
+                TextFormField(
+                  controller: _cliente,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                      labelText: 'Cliente (opcional)', prefixIcon: Icon(Icons.person_outline)),
+                ),
+                const SizedBox(height: Espaco.m),
+                TextFormField(
+                  controller: _obs,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(labelText: 'Observação (opcional)'),
+                ),
+              ],
+              const SizedBox(height: Espaco.m),
+              if (previa != null)
+                ...switch (a.tipo) {
+                  TipoLancamento.venda => [
+                      LinhaConta('Total', previa.faturamento, cor: c.positivo),
+                      LinhaConta('Lucro', previa.lucro,
+                          forte: true, cor: previa.lucro < 0 ? c.negativo : c.positivo),
+                    ],
+                  TipoLancamento.perda => [
+                      LinhaConta('Custo perdido', previa.custo, forte: true, cor: c.negativo),
+                    ],
+                  _ => [LinhaConta('Custo dos ingredientes', previa.custo)],
+                },
+              const SizedBox(height: Espaco.l),
+              FilledButton(onPressed: _salvar, child: const Text('Salvar')),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: c.negativo),
+                onPressed: _apagar,
+                child: const Text('Apagar registro'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
