@@ -37,7 +37,7 @@ class ConfeitariaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Por enquanto só o tema claro (o escuro continua em theme.dart para depois).
     return MaterialApp(
-      title: 'Doce Controle',
+      title: 'Controler Spent',
       debugShowCheckedModeBanner: false,
       locale: const Locale('pt', 'BR'),
       supportedLocales: const [Locale('pt', 'BR')],

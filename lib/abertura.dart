@@ -121,7 +121,7 @@ class _AberturaState extends State<Abertura> with SingleTickerProviderStateMixin
                               offset: Offset(0, 14 * (1 - nome)),
                               child: _Desfoque(
                                 quanto: 6 * (1 - nome),
-                                child: Text('Doce Controle',
+                                child: Text('Controler Spent',
                                     textAlign: TextAlign.center,
                                     style: t.display(size: 32, color: Marca.marinho)),
                               ),

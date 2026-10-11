@@ -59,7 +59,7 @@ class MaisScreen extends StatelessWidget {
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(store.ajustes.nomeNegocio, style: t.secao()),
-                      Text('Doce Controle', style: t.apoio()),
+                      Text('Controler Spent', style: t.apoio()),
                     ]),
                   ),
                 ]),

@@ -1,4 +1,4 @@
-# Doce Controle
+# Controler Spent
 
 App de precificação e controle para confeitaria, feito em Flutter para iPhone e Android.
 Nasceu de uma planilha de precificação: a confeiteira cadastra o que compra, monta as
