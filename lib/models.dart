@@ -167,6 +167,127 @@ extension PagamentoLabel on Pagamento {
       };
 }
 
+/// Um registro do caderno: venda, produção ou perda. O custo é congelado no dia,
+/// assim o histórico não muda quando o preço de um ingrediente sobe.
+class Lancamento {
+  final int id;
+  int produtoId;
+  String produtoNome;
+  DateTime data;
+  int feitos;
+  int vendidos;
+  int precoUnitCentavos;
+  double custoUnitCentavos;
+  double taxaPct; // taxa da maquininha, 0.05 = 5%
+  TipoLancamento tipo;
+  Pagamento? pagamento;
+  String? cliente;
+  String? obs;
+
+  Lancamento({
+    int? id,
+    required this.produtoId,
+    required this.produtoNome,
+    required this.data,
+    required this.feitos,
+    required this.vendidos,
+    required this.precoUnitCentavos,
+    required this.custoUnitCentavos,
+    this.taxaPct = 0,
+    this.tipo = TipoLancamento.lote,
+    this.pagamento,
+    this.cliente,
+    this.obs,
+  }) : id = id ?? _nextId();
+
+  /// Venda avulsa: o custo é só do que foi vendido.
+  factory Lancamento.venda(Produto p, double custoUnit,
+          {required int qtd,
+          required int preco,
+          required Pagamento pagamento,
+          required double taxa,
+          String? cliente,
+          String? obs}) =>
+      Lancamento(
+        produtoId: p.id,
+        produtoNome: p.nome,
+        data: DateTime.now(),
+        feitos: qtd,
+        vendidos: qtd,
+        precoUnitCentavos: preco,
+        custoUnitCentavos: custoUnit,
+        taxaPct: taxa,
+        tipo: TipoLancamento.venda,
+        pagamento: pagamento,
+        cliente: _limpo(cliente),
+        obs: _limpo(obs),
+      );
+
+  /// Produção: quantos ficaram prontos. Não entra no lucro (o custo entra quando
+  /// vende ou quando perde); serve para o estoque.
+  factory Lancamento.producao(Produto p, double custoUnit, int qtd) => Lancamento(
+        produtoId: p.id,
+        produtoNome: p.nome,
+        data: DateTime.now(),
+        feitos: qtd,
+        vendidos: 0,
+        precoUnitCentavos: 0,
+        custoUnitCentavos: custoUnit,
+        tipo: TipoLancamento.producao,
+      );
+
+  /// Perda: estragou, caiu, sobrou e não deu para vender.
+  factory Lancamento.perda(Produto p, double custoUnit, int qtd) => Lancamento(
+        produtoId: p.id,
+        produtoNome: p.nome,
+        data: DateTime.now(),
+        feitos: qtd,
+        vendidos: 0,
+        precoUnitCentavos: 0,
+        custoUnitCentavos: custoUnit,
+        tipo: TipoLancamento.perda,
+      );
+
+  int get sobra => (feitos - vendidos).clamp(0, feitos);
+  double get faturamento => (vendidos * precoUnitCentavos).toDouble();
+  double get custo => feitos * custoUnitCentavos; // inclui o que sobrou
+  double get perda => sobra * custoUnitCentavos;
+  double get taxas => faturamento * taxaPct;
+  double get lucro => faturamento - custo - taxas;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'produtoId': produtoId,
+        'produtoNome': produtoNome,
+        'data': data.toIso8601String(),
+        'feitos': feitos,
+        'vendidos': vendidos,
+        'precoUnitCentavos': precoUnitCentavos,
+        'custoUnitCentavos': custoUnitCentavos,
+        'taxaPct': taxaPct,
+        'tipo': tipo.name,
+        'pagamento': pagamento?.name,
+        if (cliente != null) 'cliente': cliente,
+        if (obs != null) 'obs': obs,
+      };
+
+  factory Lancamento.fromJson(Map<String, dynamic> j) => Lancamento(
+        id: j['id'],
+        produtoId: j['produtoId'],
+        produtoNome: j['produtoNome'],
+        data: DateTime.parse(j['data']),
+        feitos: j['feitos'],
+        vendidos: j['vendidos'],
+        precoUnitCentavos: j['precoUnitCentavos'],
+        custoUnitCentavos: (j['custoUnitCentavos'] as num).toDouble(),
+        taxaPct: (j['taxaPct'] as num?)?.toDouble() ?? 0,
+        tipo: TipoLancamento.values.byName(j['tipo'] ?? 'lote'),
+        pagamento: j['pagamento'] == null ? null : Pagamento.values.byName(j['pagamento']),
+        cliente: j['cliente'],
+        obs: j['obs'],
+      );
+}
+
 class CustoFixo {
   String nome;
   int valorCentavos;
