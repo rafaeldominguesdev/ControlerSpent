@@ -2,8 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models.dart';
+import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'produtos_screen.dart';
 
 /// Foto larga no topo; sem foto, um espaço convidando a pôr uma.
 class _FotoGrande extends StatelessWidget {
@@ -69,6 +72,54 @@ class _FotoGrande extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Resumo extends StatelessWidget {
+  final Calculo calc;
+  final int rendimento;
+  final VoidCallback onUsarSugerido;
+  const _Resumo({required this.calc, required this.rendimento, required this.onUsarSugerido});
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = corStatus(context, calc.status);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.s, Espaco.l, Espaco.s),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          LinhaConta('Custo da receita', calc.custoReceita,
+              detalhe: rendimento == 1 ? 'Rende 1 unidade' : 'Rende $rendimento unidades'),
+          LinhaConta('Custo de cada unidade', calc.custoUnitario, forte: true),
+          const Tracejado(),
+          Row(children: [
+            Expanded(child: Text('Preço sugerido', style: context.tipos.corpo())),
+            Text(reais(calc.precoSugerido),
+                style: context.tipos.valor(size: 18, peso: FontWeight.w700)),
+          ]),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+              onPressed: onUsarSugerido,
+              child: const Text('Usar este preço'),
+            ),
+          ),
+          if (calc.precoVenda != null) ...[
+            const Divider(),
+            const SizedBox(height: Espaco.xs),
+            LinhaConta('Lucro em cada unidade', calc.lucroUnitario!, forte: true, cor: cor),
+            Padding(
+              padding: const EdgeInsets.only(bottom: Espaco.s),
+              child: Text(
+                'Margem de ${(calc.margemReal! * 100).toStringAsFixed(0)}%. ${textoStatus(calc.status)}.',
+                style: context.tipos.apoio(color: cor),
+              ),
+            ),
+          ],
+        ]),
       ),
     );
   }
