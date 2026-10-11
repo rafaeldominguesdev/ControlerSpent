@@ -453,3 +453,50 @@ class _Rosca extends StatelessWidget {
     );
   }
 }
+
+/// O lucro depois de pagar as contas fixas e o salário dela.
+class _ContasDoMes extends StatelessWidget {
+  final ResumoMes r;
+  final VoidCallback onAjustes;
+  const _ContasDoMes({required this.r, required this.onAjustes});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final a = r.ajustes;
+    final semContas = a.totalFixos == 0 && a.salarioCentavos == 0;
+    final nomesFixos = [
+      for (final f in a.fixos)
+        if (f.valorCentavos > 0) f.nome
+    ];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.s, Espaco.l, Espaco.s),
+        child: Column(children: [
+          LinhaConta('Lucro do mês', r.lucroBolso, cor: r.lucroBolso < 0 ? c.negativo : c.positivo),
+          if (semContas)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                onPressed: onAjustes,
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Incluir gás, luz e seu salário'),
+              ),
+            )
+          else ...[
+            LinhaConta(
+              'Contas fixas e salário',
+              (a.totalFixos + a.salarioCentavos).toDouble(),
+              menos: true,
+              detalhe: _listaNomes([...nomesFixos, if (a.salarioCentavos > 0) 'seu salário']),
+            ),
+            const Tracejado(),
+            LinhaConta('Sobra no fim do mês', r.lucroReal,
+                forte: true, cor: r.lucroReal < 0 ? c.negativo : c.positivo),
+          ],
+        ]),
+      ),
+    );
+  }
+}
