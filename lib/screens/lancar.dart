@@ -148,7 +148,9 @@ class LinhaLancamento extends StatelessWidget {
 
 /// Registro em poucos toques: escolhe o produto, a quantidade e (na venda)
 /// pagamento e cliente.
-Future<void> registrarRapido(BuildContext context, Store store, TipoLancamento tipo) async {
+/// Com [produto], a folha já abre na quantidade (o toque no produto foi a escolha).
+Future<void> registrarRapido(BuildContext context, Store store, TipoLancamento tipo,
+    {Produto? produto}) async {
   if (store.produtos.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cadastre um produto na aba Produtos primeiro.')));
@@ -158,7 +160,7 @@ Future<void> registrarRapido(BuildContext context, Store store, TipoLancamento t
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _FluxoRapido(store: store, tipo: tipo),
+    builder: (_) => _FluxoRapido(store: store, tipo: tipo, produtoInicial: produto),
   );
   if (salvo == null || !context.mounted) return;
   HapticFeedback.mediumImpact();
@@ -184,7 +186,8 @@ Future<void> registrarRapido(BuildContext context, Store store, TipoLancamento t
 class _FluxoRapido extends StatefulWidget {
   final Store store;
   final TipoLancamento tipo;
-  const _FluxoRapido({required this.store, required this.tipo});
+  final Produto? produtoInicial;
+  const _FluxoRapido({required this.store, required this.tipo, this.produtoInicial});
 
   @override
   State<_FluxoRapido> createState() => _FluxoRapidoState();
@@ -201,14 +204,21 @@ class _FluxoRapidoState extends State<_FluxoRapido> {
   Store get store => widget.store;
   TipoLancamento get tipo => widget.tipo;
 
-  void _escolher(Produto p) {
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.produtoInicial;
+    if (p != null) _preparar(p);
+  }
+
+  void _preparar(Produto p) {
     final preco = p.precoVendaCentavos ?? store.calcular(p).precoSugerido.round();
     _preco.text = (preco / 100).toStringAsFixed(2).replaceAll('.', ',');
-    setState(() {
-      _produto = p;
-      _qtd = tipo == TipoLancamento.producao ? p.rendimento : 1;
-    });
+    _produto = p;
+    _qtd = tipo == TipoLancamento.producao ? p.rendimento : 1;
   }
+
+  void _escolher(Produto p) => setState(() => _preparar(p));
 
   Lancamento get _lancamento {
     final custo = store.calcular(_produto!).custoUnitario;
