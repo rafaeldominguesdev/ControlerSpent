@@ -151,3 +151,42 @@ class Calculo {
     return Calculo(total, un, un / (1 - margem), p.precoVendaCentavos);
   }
 }
+
+/// `lote` é o formato antigo ("fez 50, vendeu 44"); ao carregar ele é separado
+/// em produção + venda + perda (ver Store.carregar).
+enum TipoLancamento { lote, venda, perda, producao }
+
+enum Pagamento { dinheiro, pix, debito, credito }
+
+extension PagamentoLabel on Pagamento {
+  String get label => switch (this) {
+        Pagamento.dinheiro => 'Dinheiro',
+        Pagamento.pix => 'Pix',
+        Pagamento.debito => 'Débito',
+        Pagamento.credito => 'Crédito',
+      };
+}
+
+class CustoFixo {
+  String nome;
+  int valorCentavos;
+
+  CustoFixo({required this.nome, required this.valorCentavos});
+
+  Map<String, dynamic> toJson() => {'nome': nome, 'valorCentavos': valorCentavos};
+
+  factory CustoFixo.fromJson(Map<String, dynamic> j) =>
+      CustoFixo(nome: j['nome'], valorCentavos: j['valorCentavos']);
+}
+
+/// Custos do mês que não dependem de quanto ela produz.
+/// Aparência do app: seguir o celular, sempre claro ou sempre escuro.
+enum TemaApp { sistema, claro, escuro }
+
+extension TemaAppLabel on TemaApp {
+  String get label => switch (this) {
+        TemaApp.sistema => 'Automático',
+        TemaApp.claro => 'Claro',
+        TemaApp.escuro => 'Escuro',
+      };
+}
