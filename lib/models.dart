@@ -357,4 +357,56 @@ class Ajustes {
 
 typedef PorProduto = ({int id, String nome, double faturamento, double lucro, int vendidos});
 
+/// Números de um mês, somando os lançamentos.
+class ResumoMes {
+  /// Vendas e perdas: o que entra na conta do lucro.
+  final List<Lancamento> itens;
+
+  /// Produções do mês (só informativo: o custo entra na venda ou na perda).
+  final List<Lancamento> producoes;
+  final Ajustes ajustes;
+
+  ResumoMes(List<Lancamento> todos, this.ajustes)
+      : itens = [
+          for (final l in todos)
+            if (l.tipo != TipoLancamento.producao) l
+        ],
+        producoes = [
+          for (final l in todos)
+            if (l.tipo == TipoLancamento.producao) l
+        ];
+
+  int get produzidos => producoes.fold(0, (s, l) => s + l.feitos);
+
+  double _soma(double Function(Lancamento) f) => itens.fold(0.0, (s, l) => s + f(l));
+
+  double get faturamento => _soma((l) => l.faturamento);
+  double get custo => _soma((l) => l.custo);
+  double get perdas => _soma((l) => l.perda);
+  double get taxas => _soma((l) => l.taxas);
+  int get vendidos => itens.fold(0, (s, l) => s + l.vendidos);
+
+  /// Venda − ingredientes/embalagens − taxas.
+  double get lucroBolso => faturamento - custo - taxas;
+
+  /// Lucro de bolso − custos fixos do mês − salário dela.
+  double get lucroReal => lucroBolso - ajustes.totalFixos - ajustes.salarioCentavos;
+
+  /// Por produto: faturamento, lucro e quantidade vendida.
+  List<PorProduto> porProduto() {
+    final m = <int, PorProduto>{};
+    for (final l in itens) {
+      final a = m[l.produtoId];
+      m[l.produtoId] = (
+        id: l.produtoId,
+        nome: l.produtoNome,
+        faturamento: (a?.faturamento ?? 0) + l.faturamento,
+        lucro: (a?.lucro ?? 0) + l.lucro,
+        vendidos: (a?.vendidos ?? 0) + l.vendidos,
+      );
+    }
+    return m.values.toList()..sort((a, b) => b.lucro.compareTo(a.lucro));
+  }
+}
+
 String? _limpo(String? s) => (s == null || s.trim().isEmpty) ? null : s.trim();
