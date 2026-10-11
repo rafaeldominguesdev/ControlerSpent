@@ -330,3 +330,48 @@ class _ParaOndeFoi extends StatelessWidget {
     );
   }
 }
+
+class _Ranking extends StatelessWidget {
+  final Store store;
+  final List<PorProduto> produtos;
+  const _Ranking({required this.store, required this.produtos});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final fotos = {for (final p in store.produtos) p.id: p.fotoBase64};
+    return GrupoLista(
+      recuoDivisoria: 92,
+      children: [
+        for (final (i, p) in produtos.take(3).indexed)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
+            child: Row(children: [
+              SizedBox(
+                width: 22,
+                child: Text('${i + 1}',
+                    style: t.display(size: 22, color: i == 0 ? c.caramelo : c.tintaSuave)),
+              ),
+              const SizedBox(width: Espaco.s),
+              FotoProduto(fotos[p.id], tamanho: 36),
+              const SizedBox(width: Espaco.m),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(p.nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.corpo(peso: FontWeight.w600)),
+                  Text('${p.vendidos} vendidos', style: t.apoio().copyWith(fontSize: 12)),
+                ]),
+              ),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(reais(p.faturamento), style: t.valor(color: c.positivo)),
+                Text('lucro ${reais(p.lucro)}', style: t.apoio().copyWith(fontSize: 12)),
+              ]),
+            ]),
+          ),
+      ],
+    );
+  }
+}
