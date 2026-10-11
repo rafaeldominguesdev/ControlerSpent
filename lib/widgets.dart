@@ -53,3 +53,46 @@ class EntradaSuave extends StatelessWidget {
     );
   }
 }
+
+/// Afunda de leve enquanto o dedo está em cima. Solta se o dedo arrastar
+/// (para não ficar "apertado" durante a rolagem).
+class Pressionavel extends StatefulWidget {
+  final Widget child;
+  final double escala;
+  const Pressionavel({super.key, required this.child, this.escala = 0.97});
+
+  @override
+  State<Pressionavel> createState() => _PressionavelState();
+}
+
+class _PressionavelState extends State<Pressionavel> {
+  bool _apertado = false;
+  Offset? _inicio;
+
+  void _set(bool v) {
+    if (v == _apertado) return;
+    setState(() => _apertado = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_semAnimacao(context)) return widget.child;
+    return Listener(
+      onPointerDown: (e) {
+        _inicio = e.position;
+        _set(true);
+      },
+      onPointerMove: (e) {
+        if (_inicio != null && (e.position - _inicio!).distance > kTouchSlop) _set(false);
+      },
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: _apertado ? widget.escala : 1,
+        duration: _apertado ? Movimento.rapido : Movimento.medio,
+        curve: Movimento.entrada,
+        child: widget.child,
+      ),
+    );
+  }
+}
