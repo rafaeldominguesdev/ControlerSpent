@@ -66,7 +66,8 @@ void main() {
     await binding.takeScreenshot('03c_relatorio_semanas');
     await t.dragFrom(const Offset(200, 300), const Offset(0, 420));
     await calma(t);
-    await t.tap(find.byTooltip('Mês anterior'));
+    final meses = find.descendant(of: find.byType(TabBar), matching: find.byType(Tab));
+    await t.tap(meses.at(meses.evaluate().length - 2));
     await calma(t);
     await binding.takeScreenshot('03d_relatorio_mes_anterior');
 
@@ -85,9 +86,29 @@ void main() {
     await calma(t);
     await binding.takeScreenshot('07_producao_depois');
 
-    // Produtos e receitas prontas.
+    // Produtos: grade, lista, filtro por categoria e receitas prontas. (A aba
+    // Vendas também tem os botões de grade/lista; os de Produtos vêm depois.)
     await aba(t, 'Produtos');
     await binding.takeScreenshot('08_produtos');
+    await t.tap(find.byTooltip('Ver em lista').last);
+    await calma(t);
+    await binding.takeScreenshot('08b_produtos_lista');
+    await t.ensureVisible(find.byKey(const ValueKey('categoria Docinhos')));
+    await calma(t);
+    await t.tap(find.byKey(const ValueKey('categoria Docinhos')));
+    await calma(t);
+    await binding.takeScreenshot('08c_produtos_categoria');
+    await t.ensureVisible(find.byKey(const ValueKey('categoria Todos')));
+    await calma(t);
+    await t.tap(find.byKey(const ValueKey('categoria Todos')));
+    await calma(t);
+    await t.tap(find.text('Brigadeiro gourmet').last);
+    await calma(t);
+    await binding.takeScreenshot('08d_produto_editar');
+    await t.tap(find.byType(BackButton));
+    await calma(t);
+    await t.tap(find.byTooltip('Ver em grade').last);
+    await calma(t);
     await t.tap(find.text('Receitas prontas').first);
     await calma(t);
     await t.tap(find.text('Pão de mel'));
@@ -100,17 +121,55 @@ void main() {
     await calma(t);
     await binding.takeScreenshot('11_produtos_com_pao_de_mel');
 
-    // Aba Mais: ingredientes, receitas prontas e configurações.
+    // Aba Mais: ingredientes, receitas prontas e as configurações em partes.
     await aba(t, 'Mais');
     await binding.takeScreenshot('12_mais');
-    await t.tap(find.text('Configurações'));
+    await t.tap(find.text('Contas do mês'));
     await calma(t);
-    await binding.takeScreenshot('13_configuracoes');
+    await binding.takeScreenshot('13_contas');
+    await t.tap(find.byType(BackButton));
+    await calma(t);
+    await t.tap(find.text('Backup'));
+    await calma(t);
+    await binding.takeScreenshot('13b_backup');
+    await t.tap(find.byType(BackButton));
+    await calma(t);
+
+    // Uma segunda loja: as lojas aparecem em abas no topo. No fim ela é apagada,
+    // para o simulador voltar a ter uma loja só.
+    await t.tap(find.text('Lojas'));
+    await calma(t);
+    if (find.text('Bolos da Lu').evaluate().isEmpty) {
+      await t.tap(find.text('Nova loja'));
+      await calma(t);
+      await t.enterText(find.byType(TextField).last, 'Bolos da Lu');
+      await t.tap(find.text('Criar'));
+      await calma(t);
+    }
+    await binding.takeScreenshot('15_lojas');
+    await t.tap(find.byType(BackButton));
+    await calma(t);
+    await binding.takeScreenshot('16_loja_nova');
+    await t.tap(find.text('Doces da Lu').first);
+    await calma(t);
+    await aba(t, 'Vendas');
+    await binding.takeScreenshot('17_vendas_com_abas_de_lojas');
+    await aba(t, 'Mais');
+    await t.tap(find.text('Lojas'));
+    await calma(t);
+    await t.tap(find.byTooltip('Apagar Bolos da Lu'));
+    await calma(t);
+    await t.tap(find.text('Apagar'));
+    await calma(t);
     await t.tap(find.byType(BackButton));
     await calma(t);
     await t.tap(find.text('Ingredientes e embalagens'));
     await calma(t);
     await binding.takeScreenshot('14_ingredientes');
+    await t.tap(find.text('Leite condensado').first);
+    await calma(t);
+    await binding.takeScreenshot('14b_ingrediente_editar');
+    await fecharFolha(t);
     await t.tap(find.byType(BackButton));
     await calma(t);
   });
