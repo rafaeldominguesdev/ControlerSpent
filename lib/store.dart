@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -40,10 +41,17 @@ String fmtQtd(double v) => _qtd.format(v);
 String fmtNum(double v) =>
     v.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '').replaceAll('.', ',');
 
-/// Guarda tudo localmente no aparelho.
+/// Guarda tudo localmente no aparelho. Pode haver mais de uma loja: cada uma
+/// tem os seus dados em chaves próprias ("produtos_2"), e as listas abaixo são
+/// sempre as da loja em uso.
 class Store extends ChangeNotifier {
   static const _kInsumos = 'insumos';
   static const _kProdutos = 'produtos';
+  static const _kLojas = 'lojas';
+  static const _kLojaAtual = 'lojaAtual';
+
+  final List<Loja> lojas = [];
+  int _lojaAtualId = 1;
 
   final List<Insumo> insumos = [];
   final List<Produto> produtos = [];
@@ -62,25 +70,115 @@ class Store extends ChangeNotifier {
 
   Calculo calcular(Produto p) => Calculo.de(p, insumosPorId);
 
+  Loja get lojaAtual => lojas.firstWhere((l) => l.id == _lojaAtualId);
+
+  static const _dadosDaLoja = [_kInsumos, _kProdutos, _kLancamentos, _kAjustes];
+
+  /// Chave de um dado da loja em uso: "produtos_1".
+  String _chave(String base) => '${base}_$_lojaAtualId';
+
   Future<void> carregar() async {
     _prefs = await SharedPreferences.getInstance();
-    final i = _prefs.getString(_kInsumos);
-    final p = _prefs.getString(_kProdutos);
+    final salvas = _prefs.getString(_kLojas);
+    if (salvas == null) {
+      await _migrarLojaUnica();
+    } else {
+      lojas.addAll((jsonDecode(salvas) as List).map((e) => Loja.fromJson(e)));
+    }
+    if (lojas.isEmpty) {
+      lojas.add(Loja(id: 1, nome: 'Minha Confeitaria'));
+      await _salvarLojas();
+    }
+    final atual = _prefs.getInt(_kLojaAtual);
+    _lojaAtualId = lojas.any((l) => l.id == atual) ? atual! : lojas.first.id;
+    await _carregarLoja();
+  }
+
+  /// Antes de existirem lojas, os dados ficavam em chaves sem número. Eles viram
+  /// a loja 1; as chaves antigas só são apagadas depois de tudo copiado.
+  Future<void> _migrarLojaUnica() async {
+    final a = _prefs.getString(_kAjustes);
+    final nome = a == null ? 'Minha Confeitaria' : Ajustes.fromJson(jsonDecode(a)).nomeNegocio;
+    lojas.add(Loja(id: 1, nome: nome));
+    for (final base in _dadosDaLoja) {
+      final valor = _prefs.getString(base);
+      if (valor != null) await _prefs.setString('${base}_1', valor);
+    }
+    await _salvarLojas();
+    await _prefs.setInt(_kLojaAtual, 1);
+    for (final base in _dadosDaLoja) {
+      await _prefs.remove(base);
+    }
+  }
+
+  Future<void> _carregarLoja() async {
+    insumos.clear();
+    produtos.clear();
+    lancamentos.clear();
+    final i = _prefs.getString(_chave(_kInsumos));
+    final p = _prefs.getString(_chave(_kProdutos));
     if (i != null) {
       insumos.addAll((jsonDecode(i) as List).map((e) => Insumo.fromJson(e)));
     }
     if (p != null) {
       produtos.addAll((jsonDecode(p) as List).map((e) => Produto.fromJson(e)));
     }
-    final l = _prefs.getString(_kLancamentos);
+    final l = _prefs.getString(_chave(_kLancamentos));
     if (l != null) {
       lancamentos.addAll((jsonDecode(l) as List).map((e) => Lancamento.fromJson(e)));
     }
-    final a = _prefs.getString(_kAjustes);
-    if (a != null) ajustes = Ajustes.fromJson(jsonDecode(a));
+    final a = _prefs.getString(_chave(_kAjustes));
+    ajustes = a == null ? Ajustes(nomeNegocio: lojaAtual.nome) : Ajustes.fromJson(jsonDecode(a));
     tema.value = ajustes.tema;
     if (_separarLotesAntigos()) await _salvar();
     notifyListeners();
+  }
+
+  Future<void> _salvarLojas() =>
+      _prefs.setString(_kLojas, jsonEncode([for (final l in lojas) l.toJson()]));
+
+  /// Troca a loja em uso: o app inteiro passa a mostrar os dados dela.
+  Future<void> trocarLoja(int id) async {
+    if (id == _lojaAtualId || !lojas.any((l) => l.id == id)) return;
+    _lojaAtualId = id;
+    await _prefs.setInt(_kLojaAtual, id);
+    await _carregarLoja();
+  }
+
+  /// Cria uma loja vazia e já passa a usá-la.
+  Future<Loja> novaLoja(String nome) async {
+    final loja = Loja(id: lojas.fold(0, (m, l) => math.max(m, l.id)) + 1, nome: nome);
+    lojas.add(loja);
+    await _salvarLojas();
+    await trocarLoja(loja.id);
+    return loja;
+  }
+
+  /// Nome e logo da loja em uso (o nome também é o do negócio nos ajustes).
+  Future<void> editarLoja({required String nome, String? foto}) async {
+    lojaAtual
+      ..nome = nome
+      ..fotoBase64 = foto;
+    ajustes.nomeNegocio = nome;
+    await _salvarLojas();
+    await _salvar();
+  }
+
+  /// Apaga uma loja com tudo o que é dela. Sempre sobra pelo menos uma.
+  Future<void> removerLoja(int id) async {
+    if (lojas.length <= 1 || !lojas.any((l) => l.id == id)) return;
+    lojas.removeWhere((l) => l.id == id);
+    for (final base in _dadosDaLoja) {
+      await _prefs.remove('${base}_$id');
+    }
+    await _salvarLojas();
+    if (id == _lojaAtualId) {
+      _lojaAtualId = lojas.first.id;
+      await _prefs.setInt(_kLojaAtual, _lojaAtualId);
+      await _carregarLoja();
+    } else {
+      notifyListeners();
+    }
   }
 
   /// O formato antigo "fez 50, vendeu 44" vira produção de 50 + venda de 44 +
@@ -157,10 +255,12 @@ class Store extends ChangeNotifier {
   }
 
   Future<void> _salvar() async {
-    await _prefs.setString(_kLancamentos, jsonEncode(lancamentos.map((e) => e.toJson()).toList()));
-    await _prefs.setString(_kAjustes, jsonEncode(ajustes.toJson()));
-    await _prefs.setString(_kInsumos, jsonEncode(insumos.map((e) => e.toJson()).toList()));
-    await _prefs.setString(_kProdutos, jsonEncode(produtos.map((e) => e.toJson()).toList()));
+    await _prefs.setString(
+        _chave(_kLancamentos), jsonEncode(lancamentos.map((e) => e.toJson()).toList()));
+    await _prefs.setString(_chave(_kAjustes), jsonEncode(ajustes.toJson()));
+    await _prefs.setString(_chave(_kInsumos), jsonEncode(insumos.map((e) => e.toJson()).toList()));
+    await _prefs.setString(
+        _chave(_kProdutos), jsonEncode(produtos.map((e) => e.toJson()).toList()));
     notifyListeners();
   }
 
@@ -202,10 +302,14 @@ class Store extends ChangeNotifier {
     return _salvar();
   }
 
-  Future<void> salvarAjustes(Ajustes a) {
+  Future<void> salvarAjustes(Ajustes a) async {
     ajustes = a;
     tema.value = a.tema;
-    return _salvar();
+    if (lojaAtual.nome != a.nomeNegocio) {
+      lojaAtual.nome = a.nomeNegocio;
+      await _salvarLojas();
+    }
+    await _salvar();
   }
 
   /// Aplica na hora e já guarda.

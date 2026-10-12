@@ -355,6 +355,21 @@ class Ajustes {
       );
 }
 
+/// Um negócio da confeiteira. Cada loja tem os seus próprios ingredientes,
+/// produtos, vendas e configurações, como se fossem apps separados.
+class Loja {
+  final int id;
+  String nome;
+  String? fotoBase64; // logo ou foto da loja, já reduzida
+
+  Loja({required this.id, required this.nome, this.fotoBase64});
+
+  Map<String, dynamic> toJson() => {'id': id, 'nome': nome, 'foto': fotoBase64};
+
+  factory Loja.fromJson(Map<String, dynamic> j) =>
+      Loja(id: j['id'], nome: j['nome'] ?? 'Minha Confeitaria', fotoBase64: j['foto']);
+}
+
 typedef PorProduto = ({int id, String nome, double faturamento, double lucro, int vendidos});
 
 /// Números de um mês, somando os lançamentos.
