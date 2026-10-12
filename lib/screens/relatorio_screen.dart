@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 
 import '../models.dart';
 import '../store.dart';
@@ -9,9 +9,9 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'ajustes_screen.dart';
 
-final _mesAno = DateFormat("MMMM 'de' yyyy", 'pt_BR');
 final _mesNome = DateFormat('MMMM', 'pt_BR');
 final _mesCurto = DateFormat('MMM', 'pt_BR');
+final _semCentavos = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0);
 
 String _listaNomes(List<String> nomes) => switch (nomes.length) {
       0 => '',
@@ -26,8 +26,37 @@ bool _emAndamento(DateTime mes) {
 
 String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-/// O relatório como um extrato: o que entrou, o que saiu e o que ficou no mês,
-/// as vendas semana a semana e os mais vendidos.
+/// "Out" nas abas; "Dez 2025" quando o mês é de outro ano.
+String _rotuloAba(DateTime m) {
+  final curto = _cap(_mesCurto.format(m).replaceAll('.', ''));
+  return m.year == DateTime.now().year ? curto : '$curto ${m.year}';
+}
+
+/// "R$ 1.528", sem centavos (para caber na tabela e no topo).
+String _reais0(double centavos) => centavos <= -50
+    ? '−${_semCentavos.format(-centavos / 100)}'
+    : _semCentavos.format(math.max(0.0, centavos) / 100);
+
+typedef _Numeros = ({double vendas, int pedidos, double lucro});
+
+/// Vendas, pedidos e lucro de um mês; com [ate], só até aquele dia.
+_Numeros _numeros(Store store, DateTime mes, {int? ate}) {
+  var vendas = 0.0, lucro = 0.0;
+  var pedidos = 0;
+  for (final l in store.lancamentos) {
+    if (l.data.year != mes.year || l.data.month != mes.month) continue;
+    if (ate != null && l.data.day > ate) continue;
+    if (l.tipo == TipoLancamento.producao) continue; // produção não entra no lucro
+    vendas += l.faturamento;
+    lucro += l.lucro;
+    if (l.tipo == TipoLancamento.venda) pedidos++;
+  }
+  return (vendas: vendas, pedidos: pedidos, lucro: lucro);
+}
+
+/// O relatório do mês, no jeito de um painel de loja: vendas, pedidos e lucro
+/// em destaque, comparados com o mês passado, e a tabela por produto, com as
+/// contas do mês no fim.
 class RelatorioScreen extends StatefulWidget {
   final Store store;
   const RelatorioScreen({super.key, required this.store});
@@ -36,14 +65,41 @@ class RelatorioScreen extends StatefulWidget {
   State<RelatorioScreen> createState() => _RelatorioScreenState();
 }
 
-class _RelatorioScreenState extends State<RelatorioScreen> {
+class _RelatorioScreenState extends State<RelatorioScreen> with TickerProviderStateMixin {
   DateTime _mes = DateTime(DateTime.now().year, DateTime.now().month);
-  bool _voltando = false;
+  List<DateTime> _meses = const [];
+  TabController? _abas;
 
-  void _mudarMes(int delta) => setState(() {
-        _voltando = delta < 0;
-        _mes = DateTime(_mes.year, _mes.month + delta);
-      });
+  @override
+  void dispose() {
+    _abas?.dispose();
+    super.dispose();
+  }
+
+  /// Do primeiro mês com anotação (mostrando pelo menos 6 meses) até o mês atual.
+  List<DateTime> _mesesDasAbas() {
+    final hoje = DateTime.now();
+    final atual = DateTime(hoje.year, hoje.month);
+    var inicio = DateTime(hoje.year, hoje.month - 5);
+    for (final l in widget.store.lancamentos) {
+      final m = DateTime(l.data.year, l.data.month);
+      if (m.isBefore(inicio)) inicio = m;
+    }
+    return [for (var m = inicio; !m.isAfter(atual); m = DateTime(m.year, m.month + 1)) m];
+  }
+
+  /// Recria as abas só quando a lista de meses muda (virou o mês ou apareceu
+  /// uma anotação mais antiga).
+  void _atualizarAbas() {
+    final meses = _mesesDasAbas();
+    if (_abas != null && meses.length == _meses.length && meses.first == _meses.first) return;
+    if (!meses.contains(_mes)) _mes = meses.last;
+    final antigas = _abas;
+    _meses = meses;
+    _abas = TabController(length: meses.length, vsync: this, initialIndex: meses.indexOf(_mes));
+    // A barra de abas ainda usa as antigas até o fim deste quadro.
+    if (antigas != null) WidgetsBinding.instance.addPostFrameCallback((_) => antigas.dispose());
+  }
 
   void _abrirAjustes() => Navigator.push(
       context, MaterialPageRoute(builder: (_) => AjustesScreen(store: widget.store)));
@@ -54,47 +110,49 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
     return ListenableBuilder(
       listenable: store,
       builder: (context, _) {
-        final r = store.resumo(_mes.year, _mes.month);
+        _atualizarAbas();
+        final t = context.tipos;
+        final mes = _mes;
+        final r = store.resumo(mes.year, mes.month);
+        final anterior = DateTime(mes.year, mes.month - 1);
+        final diasAnterior = DateUtils.getDaysInMonth(anterior.year, anterior.month);
+        // No mês em andamento, compara com o mês passado até o mesmo dia.
+        final ateDia = _emAndamento(mes) ? DateTime.now().day : null;
+
+        Widget titulo(String s) => Padding(
+              padding: const EdgeInsets.only(top: Espaco.xxl, bottom: Espaco.m),
+              child: Text(s, style: t.secao()),
+            );
+        final blocos = <Widget>[
+          _Topo(
+            atual: _numeros(store, mes),
+            antes: _numeros(store, anterior,
+                ate: ateDia == null ? null : math.min(ateDia, diasAnterior)),
+            mesAnterior: anterior,
+            ateDia: ateDia,
+          ),
+          titulo('Por produto'),
+          _Tabela(
+            r: r,
+            mes: mes,
+            emAndamento: ateDia != null,
+            onAjustes: _abrirAjustes,
+          ),
+        ];
         return Scaffold(
-          appBar: AppBar(title: const Text('Relatório')),
+          appBar: AppBar(
+            title: const Text('Relatório'),
+            bottom: TabBar(
+              controller: _abas,
+              isScrollable: true,
+              onTap: (i) => setState(() => _mes = _meses[i]),
+              tabs: [for (final m in _meses) Tab(text: _rotuloAba(m))],
+            ),
+          ),
           body: ListView(
-            padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.xs, Espaco.borda, Espaco.secao),
+            padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.l, Espaco.borda, Espaco.secao),
             children: [
-              _SeletorMes(
-                mes: _mes,
-                onAnterior: () => _mudarMes(-1),
-                // Não há o que ver nos meses que ainda não chegaram.
-                onProximo: _emAndamento(_mes) ? null : () => _mudarMes(1),
-              ),
-              const SizedBox(height: Espaco.l),
-              // O conteúdo do mês desliza para o lado da seta tocada.
-              AnimatedSwitcher(
-                duration: Movimento.medio,
-                switchInCurve: Movimento.entrada,
-                switchOutCurve: Movimento.saida,
-                transitionBuilder: (child, anim) {
-                  final entrando = child.key == ValueKey(_mes);
-                  final dx = (entrando ? 1 : -1) * (_voltando ? -0.06 : 0.06);
-                  return FadeTransition(
-                    opacity: anim,
-                    child: SlideTransition(
-                      position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(anim),
-                      child: child,
-                    ),
-                  );
-                },
-                layoutBuilder: (atual, anteriores) => Stack(
-                  alignment: Alignment.topCenter,
-                  children: [...anteriores, if (atual != null) atual],
-                ),
-                child: _ConteudoMes(
-                  key: ValueKey(_mes),
-                  store: store,
-                  r: r,
-                  mes: _mes,
-                  onAjustes: _abrirAjustes,
-                ),
-              ),
+              for (final (i, b) in blocos.indexed) EntradaSuave(ordem: i, child: b),
             ],
           ),
         );
@@ -103,374 +161,105 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
   }
 }
 
-class _ConteudoMes extends StatelessWidget {
-  final Store store;
-  final ResumoMes r;
-  final DateTime mes;
-  final VoidCallback onAjustes;
-  const _ConteudoMes(
-      {super.key,
-      required this.store,
-      required this.r,
-      required this.mes,
-      required this.onAjustes});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tipos;
-    final vendeu = r.itens.any((l) => l.vendidos > 0);
-    final blocos = <Widget>[
-      _Extrato(r: r, emAndamento: _emAndamento(mes), onAjustes: onAjustes),
-      if (!vendeu)
-        Vazio(
-          icone: Icons.receipt_long_outlined,
-          titulo: 'Nada vendido em ${_mesNome.format(mes)}',
-          texto: 'As vendas que você registrar na aba Vendas aparecem aqui, semana a semana.',
-        )
-      else ...[
-        Padding(
-          padding: const EdgeInsets.only(top: Espaco.secao, bottom: Espaco.m),
-          child: Text('Semana a semana', style: t.secao()),
-        ),
-        _Semanas(r: r, mes: mes),
-        Padding(
-          padding: const EdgeInsets.only(top: Espaco.secao, bottom: Espaco.m),
-          child: Text('Mais vendidos', style: t.secao()),
-        ),
-        _Ranking(store: store, r: r),
-      ],
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final (i, b) in blocos.indexed) EntradaSuave(ordem: i, child: b),
-      ],
-    );
-  }
-}
-
-/// "‹ Outubro de 2026 ›": as setas trocam o mês.
-class _SeletorMes extends StatelessWidget {
-  final DateTime mes;
-  final VoidCallback onAnterior;
-  final VoidCallback? onProximo;
-  const _SeletorMes({required this.mes, required this.onAnterior, required this.onProximo});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.cores;
-    final t = context.tipos;
-    return Container(
-      decoration: BoxDecoration(color: c.realce, borderRadius: BorderRadius.circular(Raio.grande)),
-      child: Row(children: [
-        IconButton(
-          tooltip: 'Mês anterior',
-          color: c.acao,
-          onPressed: onAnterior,
-          icon: const Icon(Icons.chevron_left),
-        ),
-        Expanded(
-          child: Text(_cap(_mesAno.format(mes)),
-              textAlign: TextAlign.center, style: t.corpo(peso: FontWeight.w600)),
-        ),
-        IconButton(
-          tooltip: 'Próximo mês',
-          color: c.acao,
-          onPressed: onProximo,
-          icon: const Icon(Icons.chevron_right),
-        ),
-      ]),
-    );
-  }
-}
-
-/// Entrou (vendas), saiu (ingredientes, embalagens e taxas) e ficou (lucro).
-class _Extrato extends StatelessWidget {
-  final ResumoMes r;
-  final bool emAndamento;
-  final VoidCallback onAjustes;
-  const _Extrato({required this.r, required this.emAndamento, required this.onAjustes});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.cores;
-    final t = context.tipos;
-    final saiu = r.custo + r.taxas;
-    final ficou = r.lucroBolso;
-    final a = r.ajustes;
-    final contas = a.totalFixos + a.salarioCentavos;
-    final nomesContas = [
-      for (final f in a.fixos)
-        if (f.valorCentavos > 0) f.nome.toLowerCase(),
-      if (a.salarioCentavos > 0) 'seu salário',
-    ];
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.l, Espaco.l, Espaco.xs),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _LinhaExtrato(
-            icone: Icons.south_west_rounded,
-            cor: c.positivo,
-            fundo: c.dinheiroSuave,
-            titulo: 'Entrou',
-            detalhe: switch (r.vendidos) {
-              0 => 'nenhuma venda ainda',
-              1 => '1 unidade vendida',
-              final n => '$n unidades vendidas',
-            },
-            valor: ValorAnimado(r.faturamento,
-                sinal: r.faturamento > 0,
-                style: t.valor(size: 17, color: r.faturamento > 0 ? c.positivo : c.tintaSuave)),
-          ),
-          const SizedBox(height: Espaco.l),
-          _LinhaExtrato(
-            icone: Icons.north_east_rounded,
-            cor: c.negativo,
-            fundo: c.negativo.withValues(alpha: 0.1),
-            titulo: 'Saiu',
-            detalhe: r.taxas == 0 && r.perdas == 0
-                ? 'ingredientes e embalagens'
-                : _listaNomes([
-                    'ingredientes',
-                    if (r.taxas > 0) 'taxas',
-                    if (r.perdas > 0) 'perdas',
-                  ]),
-            valor: ValorAnimado(-saiu,
-                style: t.valor(size: 17, color: saiu > 0 ? c.negativo : c.tintaSuave)),
-          ),
-          const SizedBox(height: Espaco.m),
-          const Tracejado(),
-          const SizedBox(height: Espaco.m),
-          _LinhaExtrato(
-            icone: Icons.account_balance_wallet_outlined,
-            cor: c.acao,
-            fundo: c.realce,
-            titulo: 'Ficou',
-            detalhe: ficou < 0 ? 'prejuízo' : 'seu lucro',
-            forte: true,
-            valor: ValorAnimado(ficou,
-                style: t.display(size: 30, color: ficou < 0 ? c.negativo : c.positivo)),
-          ),
-          if (r.faturamento > 0) ...[
-            const SizedBox(height: Espaco.xl),
-            _DeCadaDez(r: r),
-          ],
-          const SizedBox(height: Espaco.l),
-          const Divider(height: 1),
-          if (contas == 0)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                onPressed: onAjustes,
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text('Incluir gás, luz e seu salário'),
-              ),
-            )
-          else
-            _Contas(
-              sobra: r.lucroReal,
-              emAndamento: emAndamento,
-              detalhe: '${_cap(_listaNomes(nomesContas))}: ${reais(contas)}',
-            ),
-        ]),
-      ),
-    );
-  }
-}
-
-/// O lucro diante das contas fixas e do salário: quanto sobra ou quanto falta.
-/// No mês em andamento, o que falta não é prejuízo: ainda dá tempo de vender.
-class _Contas extends StatelessWidget {
-  final double sobra;
-  final bool emAndamento;
-  final String detalhe;
-  const _Contas({required this.sobra, required this.emAndamento, required this.detalhe});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.cores;
-    final t = context.tipos;
-    final (titulo, cor) = switch ((sobra >= 0, emAndamento)) {
-      (true, true) => ('Sobra depois das contas', c.positivo),
-      (true, false) => ('Sobrou depois das contas', c.positivo),
-      (false, true) => ('Falta para cobrir as contas', c.atencao),
-      (false, false) => ('Faltou para cobrir as contas', c.negativo),
-    };
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: Espaco.m),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: t.corpo()),
-            Text(detalhe, style: t.apoio().copyWith(fontSize: 12)),
-          ]),
-        ),
-        const SizedBox(width: Espaco.m),
-        Text(reais(sobra.abs()), style: t.valor(size: 16, color: cor, peso: FontWeight.w700)),
-      ]),
-    );
-  }
-}
-
-class _LinhaExtrato extends StatelessWidget {
-  final IconData icone;
-  final Color cor, fundo;
-  final String titulo, detalhe;
-  final Widget valor;
-  final bool forte;
-  const _LinhaExtrato({
-    required this.icone,
-    required this.cor,
-    required this.fundo,
-    required this.titulo,
-    required this.detalhe,
-    required this.valor,
-    this.forte = false,
+/// Vendas, pedidos e lucro em destaque: grandes, um embaixo do outro, cada um
+/// com a setinha que compara com o mês passado.
+class _Topo extends StatelessWidget {
+  final _Numeros atual, antes;
+  final DateTime mesAnterior;
+  final int? ateDia;
+  const _Topo({
+    required this.atual,
+    required this.antes,
+    required this.mesAnterior,
+    required this.ateDia,
   });
 
   @override
   Widget build(BuildContext context) {
-    final t = context.tipos;
-    return Row(children: [
-      Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(color: fundo, shape: BoxShape.circle),
-        child: Icon(icone, size: 20, color: cor),
-      ),
-      const SizedBox(width: Espaco.m),
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(titulo, style: t.corpo(peso: forte ? FontWeight.w700 : FontWeight.w600)),
-          Text(detalhe, style: t.apoio().copyWith(fontSize: 12)),
-        ]),
-      ),
-      const SizedBox(width: Espaco.s),
-      valor,
-    ]);
-  }
-}
-
-/// "De cada R$ 10 vendidos, R$ 5,80 ficaram com você", com dez quadradinhos
-/// (um por real) pintados de verde até onde vai o lucro.
-class _DeCadaDez extends StatelessWidget {
-  final ResumoMes r;
-  const _DeCadaDez({required this.r});
-
-  @override
-  Widget build(BuildContext context) {
     final c = context.cores;
     final t = context.tipos;
-    final fracao = r.lucroBolso / r.faturamento;
-    if (fracao <= 0) {
-      return Text(
-        fracao == 0
-            ? 'Empatou: tudo o que entrou foi para os custos.'
-            : 'Os custos passaram as vendas em ${reais(-r.lucroBolso)}.',
-        style: t.apoio(color: c.negativo),
-      );
+    final curto = _mesCurto.format(mesAnterior).replaceAll('.', '');
+    final apoio = t.apoio().copyWith(fontSize: 13);
+    final grande = t.display(size: 38);
+
+    Widget comparacao(double agora, double antes, {required String semBase}) {
+      if (antes <= 0) return Text(agora > 0 ? semBase : '—', style: apoio);
+      final pct = ((agora - antes) / antes * 100).round();
+      if (pct == 0) return Text('igual a $curto', style: apoio);
+      final sobe = pct > 0;
+      final cor = sobe ? c.positivo : c.negativo;
+      return Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(sobe ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+            size: 16, color: cor),
+        const SizedBox(width: 2),
+        Text('${pct.abs()}%', style: t.valor(size: 14, color: cor, peso: FontWeight.w700)),
+        Text(' que $curto', style: apoio),
+      ]);
     }
+
+    Widget linha(String rotulo, Widget numero, Widget comparar) => Padding(
+          padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.m, Espaco.l, Espaco.l),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Text(rotulo, style: t.corpo(color: c.tintaSuave))),
+              comparar,
+            ]),
+            const SizedBox(height: Espaco.xs),
+            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: numero),
+          ]),
+        );
+
+    const divisoria = Divider(indent: Espaco.l, endIndent: Espaco.l);
+    final nome = _mesNome.format(mesAnterior);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text.rich(
-        TextSpan(children: [
-          const TextSpan(text: 'De cada R\$ 10 vendidos, '),
-          TextSpan(
-            text: reais(fracao * 1000),
-            style: TextStyle(color: c.positivo, fontWeight: FontWeight.w700),
+      Card(
+        child: Column(children: [
+          linha(
+            'Vendas',
+            ValorAnimado(atual.vendas, doZero: true, style: grande),
+            comparacao(atual.vendas, antes.vendas, semBase: 'sem vendas em $curto'),
           ),
-          const TextSpan(text: ' ficaram com você.'),
+          divisoria,
+          linha(
+            'Pedidos',
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: atual.pedidos.toDouble()),
+              duration: const Duration(milliseconds: 600),
+              curve: Movimento.entrada,
+              builder: (_, v, __) => Text('${v.round()}', style: grande),
+            ),
+            comparacao(atual.pedidos.toDouble(), antes.pedidos.toDouble(),
+                semBase: 'sem pedidos em $curto'),
+          ),
+          divisoria,
+          linha(
+            'Lucro',
+            ValorAnimado(atual.lucro,
+                doZero: true,
+                style: grande.copyWith(color: atual.lucro < 0 ? c.negativo : c.positivo)),
+            comparacao(atual.lucro, antes.lucro, semBase: 'sem lucro em $curto'),
+          ),
         ]),
-        style: t.apoio(color: c.tinta),
       ),
       const SizedBox(height: Espaco.s),
-      TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: fracao.clamp(0.0, 1.0) * 10),
-        duration: const Duration(milliseconds: 800),
-        curve: Movimento.entrada,
-        builder: (_, cheios, __) => Row(children: [
-          for (var i = 0; i < 10; i++)
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(left: i == 0 ? 0 : 3),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: SizedBox(
-                    height: 10,
-                    child: Stack(fit: StackFit.expand, children: [
-                      ColoredBox(color: c.realce),
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: (cheios - i).clamp(0.0, 1.0),
-                        child: ColoredBox(color: c.dinheiro),
-                      ),
-                    ]),
-                  ),
-                ),
-              ),
-            ),
-        ]),
-      ),
+      Text(ateDia == null ? 'Comparado a $nome.' : 'Comparado a $nome até o dia $ateDia.',
+          style: t.apoio().copyWith(fontSize: 12)),
     ]);
   }
 }
 
-enum _Quando { passou, agora, falta }
-
-/// Vendas de 7 em 7 dias (1 a 7, 8 a 14...), com a semana de hoje marcada.
-class _Semanas extends StatelessWidget {
+/// A tabela por produto (quantidade, vendas e lucro), como na planilha, com o
+/// total e as contas do mês no fim.
+class _Tabela extends StatelessWidget {
   final ResumoMes r;
   final DateTime mes;
-  const _Semanas({required this.r, required this.mes});
-
-  @override
-  Widget build(BuildContext context) {
-    final dias = DateUtils.getDaysInMonth(mes.year, mes.month);
-    final semanas = [for (var d = 1; d <= dias; d += 7) (d, math.min(d + 6, dias))];
-    final valores = [
-      for (final (de, ate) in semanas)
-        r.itens
-            .where((l) => l.data.day >= de && l.data.day <= ate)
-            .fold(0.0, (s, l) => s + l.faturamento),
-    ];
-    final maior = valores.fold(0.0, math.max);
-    final hoje = _emAndamento(mes) ? DateTime.now().day : null;
-    final mesCurto = _mesCurto.format(mes).replaceAll('.', '');
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Espaco.s),
-        child: Column(children: [
-          for (final (i, (de, ate)) in semanas.indexed)
-            _LinhaSemana(
-              nome: 'Semana ${i + 1}',
-              periodo: de == ate ? '$de $mesCurto' : '$de a $ate $mesCurto',
-              valor: valores[i],
-              fracao: maior == 0 ? 0 : valores[i] / maior,
-              quando: hoje == null || hoje > ate
-                  ? _Quando.passou
-                  : (hoje >= de ? _Quando.agora : _Quando.falta),
-              ordem: i,
-            ),
-        ]),
-      ),
-    );
-  }
-}
-
-class _LinhaSemana extends StatelessWidget {
-  final String nome, periodo;
-  final double valor, fracao;
-  final _Quando quando;
-  final int ordem;
-  const _LinhaSemana({
-    required this.nome,
-    required this.periodo,
-    required this.valor,
-    required this.fracao,
-    required this.quando,
-    required this.ordem,
+  final bool emAndamento;
+  final VoidCallback onAjustes;
+  const _Tabela({
+    required this.r,
+    required this.mes,
+    required this.emAndamento,
+    required this.onAjustes,
   });
 
   @override
@@ -478,108 +267,155 @@ class _LinhaSemana extends StatelessWidget {
     final c = context.cores;
     final t = context.tipos;
     final escala = MediaQuery.textScalerOf(context);
-    final agora = quando == _Quando.agora;
-    final falta = quando == _Quando.falta;
+    final colunaQtd = escala.scale(40);
+    final colunaValor = escala.scale(80);
+    final cabeca = t.apoio().copyWith(fontSize: 12, fontWeight: FontWeight.w600);
+    final numero = t.valor(size: 14, peso: FontWeight.w500);
+    final forte = t.valor(size: 15, peso: FontWeight.w700);
+    const respiro = EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Espaco.s, vertical: Espaco.s),
-      decoration: agora
-          ? BoxDecoration(color: c.realce, borderRadius: BorderRadius.circular(Raio.pequeno))
-          : null,
-      child: Row(children: [
-        SizedBox(
-          width: escala.scale(88),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(nome,
-                style: t
-                    .corpo(peso: FontWeight.w600, color: falta ? c.tintaSuave : c.tinta)
-                    .copyWith(fontSize: 14)),
-            Text(agora ? 'esta semana' : periodo,
-                style: t.apoio(color: agora ? c.acao : null).copyWith(fontSize: 12)),
+    Widget fileira(Widget nome, Widget qtd, Widget vendas, Widget lucro,
+            {EdgeInsets padding = respiro}) =>
+        Padding(
+          padding: padding,
+          child: Row(children: [
+            Expanded(child: nome),
+            SizedBox(width: colunaQtd, child: Align(alignment: Alignment.centerRight, child: qtd)),
+            SizedBox(
+                width: colunaValor, child: Align(alignment: Alignment.centerRight, child: vendas)),
+            SizedBox(
+                width: colunaValor, child: Align(alignment: Alignment.centerRight, child: lucro)),
           ]),
+        );
+
+    final produtos = r.porProduto()
+      ..sort((a, b) => b.vendidos != a.vendidos
+          ? b.vendidos.compareTo(a.vendidos)
+          : b.faturamento.compareTo(a.faturamento));
+
+    final linhas = <Widget>[
+      ColoredBox(
+        color: c.realce,
+        child: fileira(Text('Produto', style: cabeca), Text('Qtd', style: cabeca),
+            Text('Vendas', style: cabeca), Text('Lucro', style: cabeca),
+            padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.s)),
+      ),
+      if (produtos.isEmpty)
+        Padding(
+          padding: respiro,
+          child: Text('Nada vendido em ${_mesNome.format(mes)}.', style: t.apoio()),
         ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: SizedBox(
-              height: 10,
-              child: Stack(fit: StackFit.expand, children: [
-                ColoredBox(color: agora ? c.superficie : c.realce),
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: fracao),
-                  duration: Duration(milliseconds: 600 + ordem * 70),
-                  curve: Movimento.entrada,
-                  builder: (_, f, __) => FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: f,
-                    child: ColoredBox(color: c.acao),
-                  ),
-                ),
-              ]),
-            ),
+      for (final (i, p) in produtos.indexed) ...[
+        if (i > 0) const Divider(indent: Espaco.l, endIndent: Espaco.l),
+        fileira(
+          Text(p.nome,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: t.corpo().copyWith(fontSize: 14)),
+          Text('${p.vendidos}', style: numero),
+          Text(_reais0(p.faturamento), style: numero),
+          Text(_reais0(p.lucro), style: p.lucro < 0 ? numero.copyWith(color: c.negativo) : numero),
+        ),
+      ],
+      // Total com o traço de cima mais forte, como numa conta feita no papel.
+      DecoratedBox(
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: c.tinta, width: 1.2))),
+        child: fileira(
+          Text('Total', style: t.corpo(peso: FontWeight.w700).copyWith(fontSize: 15)),
+          Text('${r.vendidos}', style: forte),
+          Text(_reais0(r.faturamento), style: forte),
+          Text(_reais0(r.lucroBolso),
+              style: forte.copyWith(color: r.lucroBolso < 0 ? c.negativo : c.positivo)),
+        ),
+      ),
+      _Contas(r: r, emAndamento: emAndamento, onAjustes: onAjustes),
+    ];
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Card(
+        clipBehavior: Clip.antiAlias,
+        child: AnimatedSize(
+          duration: Movimento.medio,
+          curve: Movimento.entrada,
+          alignment: Alignment.topCenter,
+          child: AnimatedSwitcher(
+            duration: Movimento.medio,
+            child: Column(key: ValueKey(mes), children: linhas),
           ),
         ),
-        SizedBox(
-          width: escala.scale(100),
-          child: Text(
-            falta ? '—' : (valor > 0 ? comSinal(valor) : reais(0)),
-            textAlign: TextAlign.right,
-            style: valor > 0
-                ? t.valor(size: 14, color: c.positivo, peso: FontWeight.w700)
-                : t.valor(size: 14, color: c.tintaSuave, peso: FontWeight.w500),
-          ),
-        ),
-      ]),
-    );
+      ),
+      const SizedBox(height: Espaco.s),
+      Text('Lucro: o que sobra das vendas depois de ingredientes, embalagens, taxas e perdas.',
+          style: t.apoio().copyWith(fontSize: 12)),
+    ]);
   }
 }
 
-/// Os três produtos que mais saíram no mês.
-class _Ranking extends StatelessWidget {
-  final Store store;
+/// As contas fixas e o salário, embaixo do total: quanto são e quanto sobra ou
+/// falta. No mês em andamento, o que falta não é prejuízo: ainda dá tempo de vender.
+class _Contas extends StatelessWidget {
   final ResumoMes r;
-  const _Ranking({required this.store, required this.r});
+  final bool emAndamento;
+  final VoidCallback onAjustes;
+  const _Contas({required this.r, required this.emAndamento, required this.onAjustes});
 
   @override
   Widget build(BuildContext context) {
     final c = context.cores;
     final t = context.tipos;
-    final fotos = {for (final p in store.produtos) p.id: p.fotoBase64};
-    final produtos = [
-      for (final p in r.porProduto())
-        if (p.vendidos > 0) p
-    ]..sort((a, b) => b.vendidos != a.vendidos
-        ? b.vendidos.compareTo(a.vendidos)
-        : b.faturamento.compareTo(a.faturamento));
+    final a = r.ajustes;
+    final contas = (a.totalFixos + a.salarioCentavos).toDouble();
+    const respiro = EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m);
 
-    return GrupoLista(
-      recuoDivisoria: 92,
-      children: [
-        for (final (i, p) in produtos.take(3).indexed)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
-            child: Row(children: [
-              SizedBox(
-                width: 22,
-                child: Text('${i + 1}',
-                    style: t.display(size: 22, color: i == 0 ? c.acao : c.tintaSuave)),
-              ),
-              const SizedBox(width: Espaco.s),
-              FotoProduto(fotos[p.id], tamanho: 36),
-              const SizedBox(width: Espaco.m),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(p.nome,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: t.corpo(peso: FontWeight.w600)),
-                  Text('${p.vendidos} vendidos', style: t.apoio().copyWith(fontSize: 12)),
-                ]),
-              ),
-              Text(comSinal(p.faturamento), style: t.valor(color: c.positivo)),
-            ]),
-          ),
-      ],
+    if (contas == 0) {
+      return Container(
+        color: c.papel,
+        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.xs, Espaco.xs, Espaco.xs),
+        child: Row(children: [
+          Expanded(child: Text('Contas do mês (gás, luz, salário)', style: t.apoio())),
+          TextButton(onPressed: onAjustes, child: const Text('Incluir')),
+        ]),
+      );
+    }
+
+    final nomes = [
+      for (final f in a.fixos)
+        if (f.valorCentavos > 0) f.nome.toLowerCase(),
+      if (a.salarioCentavos > 0) 'seu salário',
+    ];
+    final sobra = r.lucroReal;
+    final (rotulo, cor) = switch ((sobra >= 0, emAndamento)) {
+      (true, true) => ('Sobra no mês', c.positivo),
+      (true, false) => ('Sobrou no mês', c.positivo),
+      (false, true) => ('Falta para cobrir', c.atencao),
+      (false, false) => ('Faltou para cobrir', c.negativo),
+    };
+    return Container(
+      color: c.papel,
+      child: Column(children: [
+        Padding(
+          padding: respiro,
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Contas do mês', style: t.corpo().copyWith(fontSize: 14)),
+                Text(_listaNomes(nomes), style: t.apoio().copyWith(fontSize: 11)),
+              ]),
+            ),
+            Text('− ${_reais0(contas)}',
+                style: t.valor(size: 14, color: c.tintaSuave, peso: FontWeight.w500)),
+          ]),
+        ),
+        const Divider(indent: Espaco.l, endIndent: Espaco.l),
+        Padding(
+          padding: respiro,
+          child: Row(children: [
+            Expanded(
+                child: Text(rotulo, style: t.corpo(peso: FontWeight.w700).copyWith(fontSize: 15))),
+            Text(_reais0(sobra.abs()), style: t.valor(size: 15, color: cor, peso: FontWeight.w700)),
+          ]),
+        ),
+      ]),
     );
   }
 }

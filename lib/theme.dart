@@ -350,6 +350,18 @@ ThemeData temaApp(Cores p, Brightness brilho) {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.pequeno)),
       ),
     ),
+    tabBarTheme: TabBarThemeData(
+      labelColor: p.tinta,
+      unselectedLabelColor: p.tintaSuave,
+      labelStyle: t.corpo(peso: FontWeight.w700).copyWith(fontSize: 15),
+      unselectedLabelStyle: t.corpo(peso: FontWeight.w500).copyWith(fontSize: 15),
+      indicator: UnderlineTabIndicator(borderSide: BorderSide(width: 3, color: p.acao)),
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: p.linha,
+      dividerHeight: 1,
+      tabAlignment: TabAlignment.start,
+      overlayColor: WidgetStatePropertyAll(p.realce),
+    ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
         backgroundColor: p.superficie,
