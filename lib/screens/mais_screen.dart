@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models.dart';
 import '../receitas_prontas.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -8,7 +9,8 @@ import 'ajustes_screen.dart';
 import 'insumos_screen.dart';
 import 'receitas_prontas_screen.dart';
 
-/// Aba "Mais": o que é de cadastro e ajuste e se usa menos no dia a dia.
+/// Aba "Mais": cadastros e configurações, o que se usa menos no dia a dia. As
+/// configurações ficam em partes, cada uma na sua tela.
 class MaisScreen extends StatelessWidget {
   final Store store;
   const MaisScreen({super.key, required this.store});
@@ -23,9 +25,15 @@ class MaisScreen extends StatelessWidget {
       builder: (context, _) {
         final c = context.cores;
         final t = context.tipos;
+        final a = store.ajustes;
         final ingredientes = store.insumos.where((i) => !i.ehEmbalagem).length;
         final embalagens = store.insumos.length - ingredientes;
         final prontas = receitasProntas.where((m) => !jaAdicionada(store, m)).length;
+        final contas = a.totalFixos + a.salarioCentavos;
+        final taxas = [
+          for (final p in Pagamento.values)
+            if (a.taxa(p) > 0) '${p.label.toLowerCase()} ${fmtNum(a.taxa(p) * 100)}%'
+        ];
 
         Widget item(IconData icone, String titulo, String apoio, VoidCallback onTap) => ListTile(
               minVerticalPadding: Espaco.m,
@@ -51,14 +59,11 @@ class MaisScreen extends StatelessWidget {
             children: [
               EntradaSuave(
                 child: Row(children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(Raio.medio),
-                    child: Image.asset('assets/logo/icone.png', width: 56, height: 56),
-                  ),
+                  AvatarLoja(store.lojaAtual),
                   const SizedBox(width: Espaco.l),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(store.ajustes.nomeNegocio, style: t.secao()),
+                      Text(store.lojaAtual.nome, style: t.secao()),
                       Text('Controler Spent', style: t.apoio()),
                     ]),
                   ),
@@ -82,15 +87,29 @@ class MaisScreen extends StatelessWidget {
                   ),
                 ]),
               ),
-              const SizedBox(height: Espaco.l),
+              const SizedBox(height: Espaco.xl),
+              const EntradaSuave(ordem: 2, child: Rotulo('Configurações')),
+              const SizedBox(height: Espaco.s),
               EntradaSuave(
                 ordem: 2,
                 child: GrupoLista(recuoDivisoria: 70, children: [
                   item(
-                    Icons.tune,
-                    'Configurações',
-                    'Nome, salário, contas fixas e taxas',
-                    () => _abrir(context, AjustesScreen(store: store)),
+                    Icons.badge_outlined,
+                    'Loja',
+                    'Nome e logo',
+                    () => _abrir(context, LojaScreen(store: store)),
+                  ),
+                  item(
+                    Icons.receipt_long_outlined,
+                    'Contas do mês',
+                    contas == 0 ? 'Salário e contas fixas' : '${reais(contas)} por mês',
+                    () => _abrir(context, ContasScreen(store: store)),
+                  ),
+                  item(
+                    Icons.credit_card_outlined,
+                    'Taxas da maquininha',
+                    taxas.isEmpty ? 'Nenhuma taxa' : taxas.join(' · '),
+                    () => _abrir(context, TaxasScreen(store: store)),
                   ),
                 ]),
               ),

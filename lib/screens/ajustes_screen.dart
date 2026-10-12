@@ -5,57 +5,130 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
-/// Nome do negócio, salário, custos fixos e taxas (usados no "lucro real").
-class AjustesScreen extends StatefulWidget {
+String _fmt(int c) => c == 0 ? '' : (c / 100).toStringAsFixed(2).replaceAll('.', ',');
+
+/// Nome e logo da loja em uso.
+class LojaScreen extends StatefulWidget {
   final Store store;
-  const AjustesScreen({super.key, required this.store});
+  const LojaScreen({super.key, required this.store});
 
   @override
-  State<AjustesScreen> createState() => _AjustesScreenState();
+  State<LojaScreen> createState() => _LojaScreenState();
 }
 
-class _AjustesScreenState extends State<AjustesScreen> {
+class _LojaScreenState extends State<LojaScreen> {
+  late final _nome = TextEditingController(text: widget.store.lojaAtual.nome);
+  late String? _foto = widget.store.lojaAtual.fotoBase64;
+
+  Future<void> _trocarFoto() async {
+    final foto = await pedirFoto(context, temFoto: _foto != null);
+    if (foto == null || !mounted) return;
+    setState(() => _foto = foto.isEmpty ? null : foto);
+  }
+
+  Future<void> _salvar() async {
+    final nome = _nome.text.trim();
+    await widget.store.editarLoja(nome: nome.isEmpty ? 'Minha Confeitaria' : nome, foto: _foto);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final foto = _foto;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Loja')),
+      body: Column(children: [
+        Expanded(
+          child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.l, Espaco.borda, Espaco.secao),
+            children: [
+              Center(
+                child: Pressionavel(
+                  child: GestureDetector(
+                    onTap: _trocarFoto,
+                    child: Column(children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Raio.grande),
+                        child: SizedBox(
+                          width: 112,
+                          height: 112,
+                          child: foto == null
+                              ? ColoredBox(
+                                  color: c.realce,
+                                  child: Icon(Icons.add_a_photo_outlined, color: c.acao, size: 32),
+                                )
+                              : Image.memory(FotoProduto.bytes(foto), fit: BoxFit.cover),
+                        ),
+                      ),
+                      const SizedBox(height: Espaco.s),
+                      Text(foto == null ? 'Pôr logo ou foto' : 'Trocar logo',
+                          style: t.corpo(peso: FontWeight.w600, color: c.acao)),
+                    ]),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Espaco.xl),
+              TextField(
+                controller: _nome,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Nome da loja'),
+              ),
+              const SizedBox(height: Espaco.s),
+              Text('O nome e a logo aparecem na aba Mais e nas abas de lojas, no topo do app.',
+                  style: t.apoio()),
+            ],
+          ),
+        ),
+        BarraInferior(
+          texto: 'Salvar',
+          onPressed: _salvar,
+          tecladoAberto: MediaQuery.viewInsetsOf(context).bottom > 0,
+        ),
+      ]),
+    );
+  }
+}
+
+/// Salário e contas fixas do mês (gás, luz...), descontados no relatório.
+class ContasScreen extends StatefulWidget {
+  final Store store;
+  const ContasScreen({super.key, required this.store});
+
+  @override
+  State<ContasScreen> createState() => _ContasScreenState();
+}
+
+class _ContasScreenState extends State<ContasScreen> {
   late final _a = Ajustes.fromJson(widget.store.ajustes.toJson());
-  late final _nome = TextEditingController(text: _a.nomeNegocio);
   late final _salario = TextEditingController(text: _fmt(_a.salarioCentavos));
   late final List<(TextEditingController, TextEditingController)> _fixos = [
     for (final f in _a.fixos)
       (TextEditingController(text: f.nome), TextEditingController(text: _fmt(f.valorCentavos))),
   ];
 
-  late final Map<Pagamento, TextEditingController> _taxas = {
-    for (final p in Pagamento.values)
-      if (p != Pagamento.dinheiro)
-        p: TextEditingController(text: _a.taxa(p) == 0 ? '' : fmtNum(_a.taxa(p) * 100)),
-  };
-
-  static String _fmt(int c) => c == 0 ? '' : (c / 100).toStringAsFixed(2).replaceAll('.', ',');
-
   int get _totalFixos => _fixos.fold(0, (s, f) => s + (parseCentavos(f.$2.text) ?? 0));
 
   Future<void> _salvar() async {
-    await widget.store.salvarAjustes(Ajustes(
-      nomeNegocio: _nome.text.trim().isEmpty ? 'Minha Confeitaria' : _nome.text.trim(),
-      salarioCentavos: parseCentavos(_salario.text) ?? 0,
-      fixos: [
+    _a
+      ..salarioCentavos = parseCentavos(_salario.text) ?? 0
+      ..fixos = [
         for (final f in _fixos)
           if (f.$1.text.trim().isNotEmpty)
             CustoFixo(nome: f.$1.text.trim(), valorCentavos: parseCentavos(f.$2.text) ?? 0),
-      ],
-      taxas: {
-        for (final p in Pagamento.values) p: (parseNum(_taxas[p]?.text ?? '') ?? 0) / 100,
-      },
-      tema: widget.store.ajustes.tema, // o tema já é salvo na hora em que muda
-    ));
+      ];
+    await widget.store.salvarAjustes(_a);
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     const teclado = TextInputType.numberWithOptions(decimal: true);
-    final titulo = Theme.of(context).textTheme.titleLarge;
+    final t = context.tipos;
     return Scaffold(
-      appBar: AppBar(title: const Text('Configurações')),
+      appBar: AppBar(title: const Text('Contas do mês')),
       // Botão no corpo, para subir junto com o teclado.
       body: Column(children: [
         Expanded(
@@ -63,16 +136,9 @@ class _AjustesScreenState extends State<AjustesScreen> {
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.s, Espaco.borda, Espaco.secao),
             children: [
-              TextField(
-                controller: _nome,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Nome da confeitaria'),
-              ),
-              const SizedBox(height: Espaco.secao),
-              Text('Seu salário', style: titulo),
+              Text('Seu salário', style: t.secao()),
               const SizedBox(height: 4),
-              Text('Quanto você quer tirar por mês pelo seu trabalho.',
-                  style: context.tipos.apoio()),
+              Text('Quanto você quer tirar por mês pelo seu trabalho.', style: t.apoio()),
               const SizedBox(height: 10),
               TextField(
                 controller: _salario,
@@ -80,10 +146,10 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 decoration: const InputDecoration(labelText: 'Salário por mês', prefixText: 'R\$ '),
               ),
               const SizedBox(height: Espaco.secao),
-              Text('Custos fixos do mês', style: titulo),
+              Text('Contas fixas', style: t.secao()),
               const SizedBox(height: 4),
               Text('Contas que você paga mesmo sem produzir: gás, luz, água e internet.',
-                  style: context.tipos.apoio()),
+                  style: t.apoio()),
               const SizedBox(height: 10),
               for (final (i, f) in _fixos.indexed)
                 Padding(
@@ -108,6 +174,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
                       ),
                     ),
                     IconButton(
+                      tooltip: 'Tirar esta conta',
                       icon: const Icon(Icons.close),
                       onPressed: () => setState(() => _fixos.removeAt(i)),
                     ),
@@ -120,34 +187,76 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 label: const Text('Adicionar conta'),
               ),
               const SizedBox(height: 8),
-              Text('Total: ${reais(_totalFixos)} por mês',
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: Espaco.secao),
-              Text('Taxas da maquininha', style: titulo),
-              const SizedBox(height: 4),
-              Text(
-                  'Quanto a maquininha ou o banco desconta em cada venda. '
-                  'O app tira isso do lucro sozinho.',
-                  style: context.tipos.apoio()),
-              const SizedBox(height: 10),
-              Row(children: [
-                for (final (i, e) in _taxas.entries.indexed) ...[
-                  if (i > 0) const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: e.value,
-                      keyboardType: teclado,
-                      decoration:
-                          InputDecoration(labelText: e.key.label, suffixText: '%', hintText: '0'),
-                    ),
-                  ),
-                ],
-              ]),
+              Text('Total: ${reais(_totalFixos)} por mês', style: t.corpo(peso: FontWeight.w600)),
             ],
           ),
         ),
         BarraInferior(
-          texto: 'Salvar ajustes',
+          texto: 'Salvar contas',
+          onPressed: _salvar,
+          tecladoAberto: MediaQuery.viewInsetsOf(context).bottom > 0,
+        ),
+      ]),
+    );
+  }
+}
+
+/// Quanto a maquininha ou o banco desconta em cada forma de pagamento.
+class TaxasScreen extends StatefulWidget {
+  final Store store;
+  const TaxasScreen({super.key, required this.store});
+
+  @override
+  State<TaxasScreen> createState() => _TaxasScreenState();
+}
+
+class _TaxasScreenState extends State<TaxasScreen> {
+  late final _a = Ajustes.fromJson(widget.store.ajustes.toJson());
+  late final Map<Pagamento, TextEditingController> _taxas = {
+    for (final p in Pagamento.values)
+      if (p != Pagamento.dinheiro)
+        p: TextEditingController(text: _a.taxa(p) == 0 ? '' : fmtNum(_a.taxa(p) * 100)),
+  };
+
+  Future<void> _salvar() async {
+    _a.taxas = {
+      for (final p in Pagamento.values) p: (parseNum(_taxas[p]?.text ?? '') ?? 0) / 100,
+    };
+    await widget.store.salvarAjustes(_a);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tipos;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Taxas da maquininha')),
+      body: Column(children: [
+        Expanded(
+          child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.s, Espaco.borda, Espaco.secao),
+            children: [
+              Text(
+                  'Quanto a maquininha ou o banco desconta em cada venda. '
+                  'O app tira isso do lucro sozinho. Dinheiro não tem taxa.',
+                  style: t.apoio()),
+              const SizedBox(height: Espaco.l),
+              for (final e in _taxas.entries)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Espaco.m),
+                  child: TextField(
+                    controller: e.value,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration:
+                        InputDecoration(labelText: e.key.label, suffixText: '%', hintText: '0'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        BarraInferior(
+          texto: 'Salvar taxas',
           onPressed: _salvar,
           tecladoAberto: MediaQuery.viewInsetsOf(context).bottom > 0,
         ),

@@ -101,8 +101,8 @@ class _RelatorioScreenState extends State<RelatorioScreen> with TickerProviderSt
     if (antigas != null) WidgetsBinding.instance.addPostFrameCallback((_) => antigas.dispose());
   }
 
-  void _abrirAjustes() => Navigator.push(
-      context, MaterialPageRoute(builder: (_) => AjustesScreen(store: widget.store)));
+  void _abrirAjustes() =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => ContasScreen(store: widget.store)));
 
   @override
   Widget build(BuildContext context) {
