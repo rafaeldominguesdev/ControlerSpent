@@ -135,6 +135,7 @@ class _RelatorioScreenState extends State<RelatorioScreen> with TickerProviderSt
           _Tabela(
             r: r,
             mes: mes,
+            fotos: {for (final p in store.produtos) p.id: p.fotoBase64},
             emAndamento: ateDia != null,
             onAjustes: _abrirAjustes,
           ),
@@ -275,11 +276,13 @@ class _Topo extends StatelessWidget {
 class _Tabela extends StatelessWidget {
   final ResumoMes r;
   final DateTime mes;
+  final Map<int, String?> fotos;
   final bool emAndamento;
   final VoidCallback onAjustes;
   const _Tabela({
     required this.r,
     required this.mes,
+    required this.fotos,
     required this.emAndamento,
     required this.onAjustes,
   });
@@ -289,8 +292,8 @@ class _Tabela extends StatelessWidget {
     final c = context.cores;
     final t = context.tipos;
     final escala = MediaQuery.textScalerOf(context);
-    final colunaQtd = escala.scale(40);
-    final colunaValor = escala.scale(80);
+    final colunaQtd = escala.scale(34);
+    final colunaValor = escala.scale(76);
     final cabeca = t.apoio().copyWith(fontSize: 12, fontWeight: FontWeight.w600);
     final numero = t.valor(size: 14, peso: FontWeight.w500);
     final forte = t.valor(size: 15, peso: FontWeight.w700);
@@ -328,12 +331,18 @@ class _Tabela extends StatelessWidget {
           child: Text('Nada vendido em ${_mesNome.format(mes)}.', style: t.apoio()),
         ),
       for (final (i, p) in produtos.indexed) ...[
-        if (i > 0) const Divider(indent: Espaco.l, endIndent: Espaco.l),
+        if (i > 0) const Divider(indent: Espaco.l + 30 + Espaco.s, endIndent: Espaco.l),
         fileira(
-          Text(p.nome,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: t.corpo().copyWith(fontSize: 14)),
+          Row(children: [
+            FotoProduto(fotos[p.id], tamanho: 30),
+            const SizedBox(width: Espaco.s),
+            Expanded(
+              child: Text(p.nome,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.corpo().copyWith(fontSize: 14, height: 1.2)),
+            ),
+          ]),
           Text('${p.vendidos}', style: numero),
           Text(_reais0(p.faturamento), style: numero),
           Text(_reais0(p.lucro), style: p.lucro < 0 ? numero.copyWith(color: c.negativo) : numero),
