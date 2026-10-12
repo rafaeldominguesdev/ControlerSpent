@@ -26,26 +26,35 @@ Future<void> carregarExemplo(Store store) async {
   final produtos = [
     Produto(
         nome: 'Brigadeiro gourmet',
+        categoria: 'Docinhos',
         rendimento: 25,
         margem: .5,
         precoVendaCentavos: 300,
         itens: [r(leite, 395), r(cacau, 40), r(mant, 20), r(gran, 100), r(forminha, 25)]),
-    Produto(nome: 'Bolo de chocolate', rendimento: 1, margem: .5, precoVendaCentavos: 8500, itens: [
-      r(farinha, 400),
-      r(ovos, 4),
-      r(cacau, 150),
-      r(acucar, 300),
-      r(mant, 100),
-      r(caixa, 1)
-    ]),
+    Produto(
+        nome: 'Bolo de chocolate',
+        categoria: 'Bolos',
+        rendimento: 1,
+        margem: .5,
+        precoVendaCentavos: 8500,
+        itens: [
+          r(farinha, 400),
+          r(ovos, 4),
+          r(cacau, 150),
+          r(acucar, 300),
+          r(mant, 100),
+          r(caixa, 1)
+        ]),
     Produto(
         nome: 'Cheesecake no pote',
+        categoria: 'Doces',
         rendimento: 8,
         margem: .45,
         precoVendaCentavos: 1200,
         itens: [r(cream, 300), r(leite, 200), r(acucar, 50)]),
     Produto(
         nome: 'Cookie recheado',
+        categoria: 'Biscoitos',
         rendimento: 12,
         margem: .5,
         precoVendaCentavos: 700,

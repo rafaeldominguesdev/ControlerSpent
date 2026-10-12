@@ -289,6 +289,15 @@ class Store extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Categorias que já existem nos produtos da loja, na ordem alfabética.
+  List<String> get categorias {
+    final nomes = {
+      for (final p in produtos)
+        if (p.categoria.trim().isNotEmpty) p.categoria.trim()
+    };
+    return nomes.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  }
+
   /// Forma de pagamento da venda mais recente (a próxima venda já começa nela).
   Pagamento? get ultimoPagamento => lancamentos
       .where((l) => l.tipo == TipoLancamento.venda && l.pagamento != null)

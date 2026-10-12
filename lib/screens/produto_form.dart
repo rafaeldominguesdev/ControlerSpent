@@ -23,6 +23,7 @@ class _ProdutoFormState extends State<ProdutoForm> {
       ? Produto(nome: '')
       : Produto.fromJson(widget.atual!.toJson()); // cópia para editar
   late final _nome = TextEditingController(text: _p.nome);
+  late final _categoria = TextEditingController(text: _p.categoria);
   late final _rend = TextEditingController(text: '${_p.rendimento}');
   late final _margem = TextEditingController(text: (_p.margem * 100).toStringAsFixed(0));
   late final _preco = TextEditingController(
@@ -34,6 +35,7 @@ class _ProdutoFormState extends State<ProdutoForm> {
 
   void _sincronizar() {
     _p.nome = _nome.text.trim();
+    _p.categoria = _categoria.text.trim();
     _p.rendimento = int.tryParse(_rend.text) ?? 1;
     _p.margem = (parseNum(_margem.text) ?? 0) / 100;
     _p.precoVendaCentavos = parseCentavos(_preco.text);
@@ -158,6 +160,13 @@ class _ProdutoFormState extends State<ProdutoForm> {
                   decoration: const InputDecoration(
                       labelText: 'Nome do produto', hintText: 'Brigadeiro gourmet'),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Coloque um nome' : null,
+                ),
+                const SizedBox(height: Espaco.m),
+                _CampoCategoria(
+                  controller: _categoria,
+                  sugestoes:
+                      {...store.categorias, 'Bolos', 'Docinhos', 'Doces', 'Salgados'}.toList(),
+                  onChanged: _sincronizar,
                 ),
                 const SizedBox(height: Espaco.m),
                 TextFormField(
@@ -419,6 +428,65 @@ class _EscolherInsumo extends StatelessWidget {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+/// Categoria do produto (bolos, docinhos...): digitada ou escolhida entre as que
+/// já existem. Serve para filtrar a aba Produtos.
+class _CampoCategoria extends StatelessWidget {
+  final TextEditingController controller;
+  final List<String> sugestoes;
+  final VoidCallback onChanged;
+  const _CampoCategoria(
+      {required this.controller, required this.sugestoes, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    return ValueListenableBuilder(
+      valueListenable: controller,
+      builder: (context, valor, _) {
+        final atual = valor.text.trim().toLowerCase();
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          TextFormField(
+            controller: controller,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+                labelText: 'Categoria (opcional)', hintText: 'Bolos, docinhos, salgados…'),
+          ),
+          const SizedBox(height: Espaco.s),
+          Wrap(spacing: Espaco.s, runSpacing: Espaco.s, children: [
+            for (final s in sugestoes)
+              Pressionavel(
+                child: Material(
+                  color: s.toLowerCase() == atual ? c.acao : c.superficie,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Raio.pequeno),
+                    side: BorderSide(color: s.toLowerCase() == atual ? c.acao : c.linha),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(Raio.pequeno),
+                    onTap: () {
+                      controller.text = s.toLowerCase() == atual ? '' : s;
+                      onChanged();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: 7),
+                      child: Text(s,
+                          style: t
+                              .corpo(
+                                  peso: FontWeight.w500,
+                                  color: s.toLowerCase() == atual ? c.sobreAcao : c.tinta)
+                              .copyWith(fontSize: 14)),
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+        ]);
+      },
     );
   }
 }
