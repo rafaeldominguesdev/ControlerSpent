@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../models.dart';
 import '../store.dart';
@@ -87,47 +84,9 @@ class _ProdutoFormState extends State<ProdutoForm> {
   }
 
   Future<void> _escolherFoto() async {
-    final origem = await showModalBottomSheet<ImageSource?>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(
-            leading: const Icon(Icons.photo_camera_outlined),
-            title: const Text('Tirar foto'),
-            onTap: () => Navigator.pop(ctx, ImageSource.camera),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('Escolher da galeria'),
-            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-          ),
-          if (_p.fotoBase64 != null)
-            ListTile(
-              leading: Icon(Icons.delete_outline, color: context.cores.negativo),
-              title: const Text('Tirar a foto'),
-              onTap: () {
-                setState(() => _p.fotoBase64 = null);
-                Navigator.pop(ctx);
-              },
-            ),
-        ]),
-      ),
-    );
-    if (origem == null) return;
-    try {
-      // Reduz a foto para não pesar no aparelho.
-      final img = await ImagePicker()
-          .pickImage(source: origem, maxWidth: 700, maxHeight: 700, imageQuality: 75);
-      if (img == null) return;
-      final b = await img.readAsBytes();
-      setState(() => _p.fotoBase64 = base64Encode(b));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Não deu para abrir a câmera/galeria. Verifique a permissão nos Ajustes do celular.')));
-    }
+    final foto = await pedirFoto(context, temFoto: _p.fotoBase64 != null);
+    if (foto == null || !mounted) return;
+    setState(() => _p.fotoBase64 = foto.isEmpty ? null : foto);
   }
 
   Future<void> _salvar() async {

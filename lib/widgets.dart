@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
+import 'models.dart';
 import 'store.dart';
 import 'theme.dart';
 
@@ -707,4 +709,70 @@ class Pilula extends StatelessWidget {
           Text(texto, style: context.tipos.valor(size: 13, color: cor)),
         ]),
       );
+}
+
+/// Pergunta de onde vem a foto (câmera ou galeria) e devolve a imagem já reduzida,
+/// em base64. Devolve `null` se ela desistir e `''` se pediu para tirar a foto.
+Future<String?> pedirFoto(BuildContext context, {required bool temFoto}) async {
+  // Fechar a folha é desistir; "Tirar a foto" volta como 'remover'.
+  final escolha = await showModalBottomSheet<Object>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        ListTile(
+          leading: const Icon(Icons.photo_camera_outlined),
+          title: const Text('Tirar foto'),
+          onTap: () => Navigator.pop(ctx, ImageSource.camera),
+        ),
+        ListTile(
+          leading: const Icon(Icons.photo_library_outlined),
+          title: const Text('Escolher da galeria'),
+          onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+        ),
+        if (temFoto)
+          ListTile(
+            leading: Icon(Icons.delete_outline, color: ctx.cores.negativo),
+            title: const Text('Tirar a foto'),
+            onTap: () => Navigator.pop(ctx, 'remover'),
+          ),
+      ]),
+    ),
+  );
+  if (escolha == 'remover') return '';
+  if (escolha is! ImageSource) return null;
+  final origem = escolha;
+  try {
+    // Reduz a foto para não pesar no aparelho.
+    final img = await ImagePicker()
+        .pickImage(source: origem, maxWidth: 700, maxHeight: 700, imageQuality: 75);
+    if (img == null) return null;
+    return base64Encode(await img.readAsBytes());
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Não deu para abrir a câmera/galeria. Verifique a permissão nos Ajustes do celular.')));
+    }
+    return null;
+  }
+}
+
+/// Logo da loja: a foto que ela escolheu ou, sem foto, o ícone do app.
+class AvatarLoja extends StatelessWidget {
+  final Loja loja;
+  final double tamanho;
+  const AvatarLoja(this.loja, {super.key, this.tamanho = 56});
+
+  @override
+  Widget build(BuildContext context) {
+    final foto = loja.fotoBase64;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tamanho >= 40 ? Raio.medio : Raio.pequeno),
+      child: foto == null
+          ? Image.asset('assets/logo/icone.png', width: tamanho, height: tamanho)
+          : Image.memory(FotoProduto.bytes(foto),
+              width: tamanho, height: tamanho, fit: BoxFit.cover, gaplessPlayback: true),
+    );
+  }
 }
