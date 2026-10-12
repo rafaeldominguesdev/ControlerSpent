@@ -67,7 +67,7 @@ class _Secao extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(Espaco.xs, 0, Espaco.xs, Espaco.s),
             child: Rotulo(titulo),
           ),
-          GrupoLista(children: [
+          GrupoLista(recuoDivisoria: 72, children: [
             for (final ins in itens) _LinhaInsumo(ins: ins, store: store),
           ]),
         ]),
@@ -90,6 +90,8 @@ class _LinhaInsumo extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
         child: Row(children: [
+          FotoProduto(ins.fotoBase64, tamanho: 44, icone: FotoProduto.iconeInsumo(ins)),
+          const SizedBox(width: Espaco.m),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(ins.nome, style: context.tipos.corpo(peso: FontWeight.w600)),
@@ -138,6 +140,13 @@ class _InsumoFormState extends State<_InsumoForm> {
           : (widget.atual!.precoCentavos / 100).toStringAsFixed(2).replaceAll('.', ','));
   late Unidade _unidade = widget.atual?.unidade ?? Unidade.g;
   late bool _embalagem = widget.atual?.ehEmbalagem ?? false;
+  late String? _foto = widget.atual?.fotoBase64;
+
+  Future<void> _escolherFoto() async {
+    final foto = await pedirFoto(context, temFoto: _foto != null);
+    if (foto == null || !mounted) return;
+    setState(() => _foto = foto.isEmpty ? null : foto);
+  }
 
   Future<void> _salvar() async {
     if (!_form.currentState!.validate()) return;
@@ -148,6 +157,7 @@ class _InsumoFormState extends State<_InsumoForm> {
       qtdEmbalagem: parseNum(_qtd.text)!,
       precoCentavos: parseCentavos(_preco.text)!,
       ehEmbalagem: _embalagem,
+      fotoBase64: _foto,
     );
     await widget.store.salvarInsumo(ins);
     if (mounted) Navigator.pop(context, ins);
@@ -177,8 +187,47 @@ class _InsumoFormState extends State<_InsumoForm> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(widget.atual == null ? 'Novo item' : 'Editar item',
-                    style: Theme.of(context).textTheme.titleLarge),
+                Row(children: [
+                  // A foto ajuda a achar o item de longe nas listas e nas receitas.
+                  Pressionavel(
+                    child: GestureDetector(
+                      onTap: _escolherFoto,
+                      child: Stack(clipBehavior: Clip.none, children: [
+                        FotoProduto(_foto,
+                            tamanho: 64,
+                            raio: Raio.medio,
+                            icone: _embalagem ? Icons.inventory_2_outlined : Icons.egg_outlined),
+                        Positioned(
+                          right: -5,
+                          bottom: -5,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: context.cores.acao,
+                              borderRadius: BorderRadius.circular(Raio.pequeno),
+                              border: Border.all(color: context.cores.papel, width: 2),
+                            ),
+                            child:
+                                Icon(Icons.photo_camera, size: 13, color: context.cores.sobreAcao),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  const SizedBox(width: Espaco.l),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(widget.atual == null ? 'Novo item' : 'Editar item',
+                          style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                          _foto == null
+                              ? 'Toque no quadrado para pôr uma foto'
+                              : 'Toque na foto para trocar',
+                          style: context.tipos.apoio().copyWith(fontSize: 12)),
+                    ]),
+                  ),
+                ]),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nome,

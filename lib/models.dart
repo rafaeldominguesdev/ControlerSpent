@@ -25,6 +25,7 @@ class Insumo {
   double qtdEmbalagem;
   int precoCentavos;
   bool ehEmbalagem;
+  String? fotoBase64; // foto já reduzida, para reconhecer o item de longe
 
   Insumo({
     int? id,
@@ -33,6 +34,7 @@ class Insumo {
     required this.qtdEmbalagem,
     required this.precoCentavos,
     this.ehEmbalagem = false,
+    this.fotoBase64,
   }) : id = id ?? _nextId();
 
   /// Custo em centavos de 1 g / 1 ml / 1 un.
@@ -45,6 +47,7 @@ class Insumo {
         'qtdEmbalagem': qtdEmbalagem,
         'precoCentavos': precoCentavos,
         'ehEmbalagem': ehEmbalagem,
+        if (fotoBase64 != null) 'foto': fotoBase64,
       };
 
   factory Insumo.fromJson(Map<String, dynamic> j) => Insumo(
@@ -54,6 +57,7 @@ class Insumo {
         qtdEmbalagem: (j['qtdEmbalagem'] as num).toDouble(),
         precoCentavos: j['precoCentavos'],
         ehEmbalagem: j['ehEmbalagem'] ?? false,
+        fotoBase64: j['foto'],
       );
 }
 

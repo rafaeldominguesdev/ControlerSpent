@@ -185,7 +185,7 @@ class _ProdutoFormState extends State<ProdutoForm> {
                 Text('O que vai na receita inteira, incluindo embalagens.',
                     style: context.tipos.apoio()),
                 const SizedBox(height: Espaco.m),
-                GrupoLista(children: [
+                GrupoLista(recuoDivisoria: 60, children: [
                   for (final it in _p.itens) _linhaItem(it, insumos[it.insumoId]),
                   ListTile(
                     leading: Icon(Icons.add, color: context.cores.acao),
@@ -260,6 +260,8 @@ class _ProdutoFormState extends State<ProdutoForm> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.s, Espaco.xs, Espaco.s),
         child: Row(children: [
+          FotoProduto(ins.fotoBase64, tamanho: 36, icone: FotoProduto.iconeInsumo(ins)),
+          const SizedBox(width: Espaco.m),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(ins.nome, style: context.tipos.corpo(peso: FontWeight.w600)),
@@ -420,6 +422,7 @@ class _EscolherInsumo extends StatelessWidget {
           child: ListView(children: [
             for (final i in lista)
               ListTile(
+                leading: FotoProduto(i.fotoBase64, tamanho: 40, icone: FotoProduto.iconeInsumo(i)),
                 title: Text(i.nome),
                 subtitle: Text(
                     '${fmtQtd(i.qtdEmbalagem)} ${i.unidade.label} por ${reais(i.precoCentavos)}'),

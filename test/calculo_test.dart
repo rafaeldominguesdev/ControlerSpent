@@ -71,6 +71,19 @@ void main() {
     expect(ids.length, 500);
   });
 
+  test('ingrediente guarda a foto (e quem não tem foto continua sem)', () {
+    final com = Insumo(
+        nome: 'Leite condensado',
+        unidade: Unidade.g,
+        qtdEmbalagem: 395,
+        precoCentavos: 790,
+        fotoBase64: 'Zm90bw==');
+    expect(Insumo.fromJson(com.toJson()).fotoBase64, 'Zm90bw==');
+    final sem = Insumo(nome: 'Açúcar', unidade: Unidade.g, qtdEmbalagem: 1000, precoCentavos: 500);
+    expect(sem.toJson().containsKey('foto'), isFalse);
+    expect(Insumo.fromJson(sem.toJson()).fotoBase64, isNull);
+  });
+
   test('reais usa o sinal de menos tipográfico', () {
     expect(reais(-1200), '\u2212R\$\u00a012,00');
     expect(reais(-0.2), 'R\$\u00a00,00');

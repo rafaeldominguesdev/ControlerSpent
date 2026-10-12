@@ -637,12 +637,18 @@ class BarraInferior extends StatelessWidget {
   }
 }
 
-/// Foto do produto, ou um desenho de bolo quando não tem foto.
+/// Foto do produto (ou do ingrediente); sem foto, um desenho no lugar.
 class FotoProduto extends StatelessWidget {
   final String? base64;
   final double tamanho;
   final double raio;
-  const FotoProduto(this.base64, {super.key, this.tamanho = 48, this.raio = Raio.pequeno});
+  final IconData icone;
+  const FotoProduto(this.base64,
+      {super.key, this.tamanho = 48, this.raio = Raio.pequeno, this.icone = Icons.cake_outlined});
+
+  /// Desenho de quando o ingrediente ou a embalagem não tem foto.
+  static IconData iconeInsumo(Insumo i) =>
+      i.ehEmbalagem ? Icons.inventory_2_outlined : Icons.egg_outlined;
 
   static final _cache = <String, Uint8List>{};
 
@@ -659,8 +665,7 @@ class FotoProduto extends StatelessWidget {
         child: b == null
             ? ColoredBox(
                 color: context.cores.realce,
-                child: Icon(Icons.cake_outlined,
-                    size: tamanho * 0.42, color: context.cores.tintaSuave),
+                child: Icon(icone, size: tamanho * 0.42, color: context.cores.tintaSuave),
               )
             : Image.memory(bytes(b), fit: BoxFit.cover, gaplessPlayback: true),
       ),
