@@ -62,7 +62,7 @@ class MaisScreen extends StatelessWidget {
             children: [
               EntradaSuave(
                 child: Row(children: [
-                  AvatarLoja(store.lojaAtual),
+                  AvatarLojaEditavel(store: store, loja: store.lojaAtual),
                   const SizedBox(width: Espaco.l),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -81,14 +81,15 @@ class LojasScreen extends StatelessWidget {
             children: [
               Text(
                   'Cada loja tem os seus produtos, ingredientes, vendas e relatório. '
-                  'Com mais de uma, elas aparecem em abas no topo do app.',
+                  'Com mais de uma, elas aparecem em abas no topo do app. '
+                  'Toque na logo de uma loja para pôr ou trocar a foto dela.',
                   style: t.apoio()),
               const SizedBox(height: Espaco.l),
               GrupoLista(recuoDivisoria: 70, children: [
                 for (final l in store.lojas)
                   ListTile(
                     minVerticalPadding: Espaco.m,
-                    leading: AvatarLoja(l, tamanho: 40),
+                    leading: AvatarLojaEditavel(store: store, loja: l, tamanho: 44),
                     title: Text(l.nome),
                     subtitle: l.id == store.lojaAtual.id
                         ? Text('Em uso', style: t.apoio(color: c.positivo))

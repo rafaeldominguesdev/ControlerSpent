@@ -53,6 +53,17 @@ void main() {
     expect(denovo.produtos.map((p) => p.nome), ['Bolo de cenoura']);
   });
 
+  test('a foto de qualquer loja pode ser trocada e fica guardada', () async {
+    SharedPreferences.setMockInitialValues({});
+    final store = await abrir();
+    final primeira = store.lojas.single;
+    await store.novaLoja('Bolos da Lu'); // a primeira deixa de ser a loja em uso
+    await store.mudarFotoLoja(primeira.id, 'Zm90bw==');
+    final denovo = await abrir();
+    expect(denovo.lojas.first.fotoBase64, 'Zm90bw==');
+    expect(denovo.lojas.last.fotoBase64, isNull);
+  });
+
   test('apagar uma loja leva os dados dela e volta para outra', () async {
     SharedPreferences.setMockInitialValues({});
     final store = await abrir();

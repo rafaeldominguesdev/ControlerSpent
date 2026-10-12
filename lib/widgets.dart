@@ -776,3 +776,53 @@ class AvatarLoja extends StatelessWidget {
     );
   }
 }
+
+/// Logo da loja com um botãozinho de câmera: um toque já abre a câmera ou a
+/// galeria para pôr (ou trocar) a foto daquela loja.
+class AvatarLojaEditavel extends StatelessWidget {
+  final Store store;
+  final Loja loja;
+  final double tamanho;
+  const AvatarLojaEditavel({super.key, required this.store, required this.loja, this.tamanho = 56});
+
+  Future<void> _trocar(BuildContext context) async {
+    final foto = await pedirFoto(context, temFoto: loja.fotoBase64 != null);
+    if (foto == null) return;
+    await store.mudarFotoLoja(loja.id, foto.isEmpty ? null : foto);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final selo = (tamanho * 0.45).clamp(18.0, 26.0);
+    return Semantics(
+      button: true,
+      label: loja.fotoBase64 == null
+          ? 'Pôr foto da loja ${loja.nome}'
+          : 'Trocar foto da loja ${loja.nome}',
+      child: Pressionavel(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _trocar(context),
+          child: Stack(clipBehavior: Clip.none, children: [
+            AvatarLoja(loja, tamanho: tamanho),
+            Positioned(
+              right: -selo / 4,
+              bottom: -selo / 4,
+              child: Container(
+                width: selo,
+                height: selo,
+                decoration: BoxDecoration(
+                  color: c.acao,
+                  borderRadius: BorderRadius.circular(Raio.pequeno),
+                  border: Border.all(color: c.papel, width: 2),
+                ),
+                child: Icon(Icons.photo_camera, size: selo * 0.55, color: c.sobreAcao),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}

@@ -164,6 +164,13 @@ class Store extends ChangeNotifier {
     await _salvar();
   }
 
+  /// Troca a logo de qualquer loja (não só da que está em uso).
+  Future<void> mudarFotoLoja(int id, String? foto) async {
+    lojas.firstWhere((l) => l.id == id).fotoBase64 = foto;
+    await _salvarLojas();
+    notifyListeners();
+  }
+
   /// Apaga uma loja com tudo o que é dela. Sempre sobra pelo menos uma.
   Future<void> removerLoja(int id) async {
     if (lojas.length <= 1 || !lojas.any((l) => l.id == id)) return;
