@@ -8,18 +8,22 @@ receitas e o app calcula custo, preço sugerido e lucro.
 
 - **Ingredientes e embalagens**: cadastro como vem no pacote (ex.: leite condensado, 395 g,
   R$ 7,90); o app calcula o custo de cada grama, ml ou unidade.
-- **Produtos**: receita com foto, rendimento e margem; custo por unidade, preço sugerido e
-  semáforo de margem. Inclui **receitas prontas** (pão de mel, brigadeiro, brownie e outras)
-  que reaproveitam os ingredientes já cadastrados.
+- **Produtos**: receita com foto, rendimento, margem e categoria (bolos, docinhos...); em
+  grade ou em lista, com filtro por categoria e o preço, o lucro e o custo de cada unidade.
+  Inclui **receitas prontas** (pão de mel, brigadeiro, brownie e outras) que reaproveitam os
+  ingredientes já cadastrados.
 - **Vendas**: o total de hoje em verde, os produtos em grade ou em lista (um toque abre a
   venda: quantidade, pagamento, cliente e observação) e o histórico separado por dia; taxas
   da maquininha descontadas automaticamente.
 - **Produção**: quanto ficou pronto, estoque para vender e perdas.
-- **Relatório do mês**, como um extrato: quanto entrou, quanto saiu e quanto ficou ("de cada
-  R$ 10 vendidos, R$ 7 ficaram com você"), quanto sobra ou falta para as contas fixas e o
-  salário, as vendas semana a semana e os mais vendidos.
-- **Configurações** (aba Mais): nome do negócio, salário, contas fixas e taxas por forma de
-  pagamento.
+- **Relatório do mês**, com os meses em abas: vendas, pedidos e lucro em destaque, com a
+  setinha comparando com o mês passado, e a tabela por produto (quantidade, vendas e lucro),
+  como na planilha, com as contas fixas e o salário no fim.
+- **Lojas**: dá para ter mais de uma loja, cada uma com os seus produtos, ingredientes, vendas,
+  relatório e contas; com mais de uma, elas aparecem em abas no topo do app.
+- **Configurações** (aba Mais), em partes: loja (nome e logo), contas do mês (salário e contas
+  fixas), taxas da maquininha, lojas e **backup** (salvar uma cópia da loja pelo menu de
+  compartilhar e restaurar depois, como loja nova ou por cima da atual).
 
 ## Regra de contas
 
