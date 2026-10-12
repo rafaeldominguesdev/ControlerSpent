@@ -113,8 +113,8 @@ class _HomeState extends State<Home> {
         itens: const [
           ItemNav(Icons.bar_chart_outlined, Icons.bar_chart, 'Relatório'),
           ItemNav(Icons.receipt_long_outlined, Icons.receipt_long, 'Vendas'),
-          ItemNav(Icons.bakery_dining_outlined, Icons.bakery_dining, 'Produção'),
-          ItemNav(Icons.cake_outlined, Icons.cake, 'Produtos'),
+          ItemNav(Icons.soup_kitchen_outlined, Icons.soup_kitchen, 'Produção'),
+          ItemNav(Icons.storefront_outlined, Icons.storefront, 'Produtos'),
           ItemNav(Icons.more_horiz, Icons.more_horiz, 'Mais'),
         ],
       ),

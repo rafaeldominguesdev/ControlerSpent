@@ -47,7 +47,7 @@ class ProducaoScreen extends StatelessWidget {
           Wrap(spacing: Espaco.s, runSpacing: Espaco.s, children: [
             if (valemProntos > 0)
               Pilula('valem ${reais(valemProntos)}', cor: c.positivo, icone: Icons.sell_outlined),
-            Pilula('$feitosHoje feitos hoje', cor: c.acao, icone: Icons.bakery_dining_outlined),
+            Pilula('$feitosHoje feitos hoje', cor: c.acao, icone: Icons.soup_kitchen_outlined),
           ]),
           const SizedBox(height: Espaco.xl),
           BotaoPrincipal(
@@ -88,7 +88,7 @@ class ProducaoScreen extends StatelessWidget {
           ],
           if (dias.isEmpty)
             const Vazio(
-              icone: Icons.bakery_dining_outlined,
+              icone: Icons.soup_kitchen_outlined,
               titulo: 'Seu caderno de produção',
               texto: 'Registre quantos você fez. O app desconta o que for vendido '
                   'e mostra quanto ainda tem pronto.',
