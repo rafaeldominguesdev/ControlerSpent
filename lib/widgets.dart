@@ -12,12 +12,15 @@ bool _semAnimacao(BuildContext context) => MediaQuery.maybeDisableAnimationsOf(c
 /// "+R$ 12,00" ou "−R$ 12,00".
 String comSinal(double centavos) => centavos < 0 ? reais(centavos) : '+${reais(centavos)}';
 
-/// Valor em reais que corre até o número novo quando muda.
+/// Valor em reais que corre até o número novo quando muda. Com [doZero], na
+/// primeira vez ele também sobe a partir de zero (para os números de destaque).
 class ValorAnimado extends StatelessWidget {
   final double centavos;
   final TextStyle? style;
   final bool sinal;
-  const ValorAnimado(this.centavos, {super.key, this.style, this.sinal = false});
+  final bool doZero;
+  const ValorAnimado(this.centavos,
+      {super.key, this.style, this.sinal = false, this.doZero = false});
 
   String _texto(double v) => sinal ? comSinal(v) : reais(v);
 
@@ -25,7 +28,7 @@ class ValorAnimado extends StatelessWidget {
   Widget build(BuildContext context) {
     if (_semAnimacao(context)) return Text(_texto(centavos), style: style);
     return TweenAnimationBuilder<double>(
-      tween: Tween(end: centavos),
+      tween: Tween(begin: doZero ? 0 : null, end: centavos),
       duration: const Duration(milliseconds: 600),
       curve: Movimento.entrada,
       builder: (_, v, __) => Text(_texto(v), style: style),
