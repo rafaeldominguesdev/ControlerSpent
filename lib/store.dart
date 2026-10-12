@@ -49,6 +49,7 @@ class Store extends ChangeNotifier {
   static const _kProdutos = 'produtos';
   static const _kLojas = 'lojas';
   static const _kLojaAtual = 'lojaAtual';
+  static const _kProdutosEmLista = 'produtosEmLista';
 
   final List<Loja> lojas = [];
   int _lojaAtualId = 1;
@@ -286,6 +287,14 @@ class Store extends ChangeNotifier {
 
   Future<void> mudarModoVendas({required bool lista}) async {
     await _prefs.setBool(_kVendasEmLista, lista);
+    notifyListeners();
+  }
+
+  /// Em Produtos, os produtos aparecem em lista (true) ou em grade (false).
+  bool get produtosEmLista => _prefs.getBool(_kProdutosEmLista) ?? false;
+
+  Future<void> mudarModoProdutos({required bool lista}) async {
+    await _prefs.setBool(_kProdutosEmLista, lista);
     notifyListeners();
   }
 

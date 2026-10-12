@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models.dart';
 import '../receitas_prontas.dart';
@@ -22,19 +23,30 @@ String textoStatus(StatusPreco s) => switch (s) {
       StatusPreco.semPreco => 'Sem preço',
     };
 
-class ProdutosScreen extends StatelessWidget {
+/// Filtro "Outros": produtos sem categoria.
+const _semCategoria = '';
+
+/// O cardápio: os produtos com preço, custo e lucro de cada unidade, filtrados
+/// por categoria, em grade ou em lista (o app lembra a escolha).
+class ProdutosScreen extends StatefulWidget {
   final Store store;
   const ProdutosScreen({super.key, required this.store});
 
-  void _abrirProntas(BuildContext context) => Navigator.push(
+  @override
+  State<ProdutosScreen> createState() => _ProdutosScreenState();
+}
+
+class _ProdutosScreenState extends State<ProdutosScreen> {
+  /// Categoria escolhida no filtro; `null` mostra todas.
+  String? _categoria;
+
+  Store get store => widget.store;
+
+  void _abrirProntas() => Navigator.push(
       context, MaterialPageRoute(builder: (_) => ReceitasProntasScreen(store: store)));
 
-  void _abrir(BuildContext context, [Produto? p]) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => ProdutoForm(store: store, atual: p)),
-    );
-  }
+  void _abrir([Produto? p]) => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => ProdutoForm(store: store, atual: p)));
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -43,59 +55,138 @@ class ProdutosScreen extends StatelessWidget {
       );
 
   Widget _tela(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final categorias = store.categorias;
+    final semCategoria = store.produtos.where((p) => p.categoria.trim().isEmpty).length;
+    // A categoria escolhida pode ter sumido (produto apagado ou trocado de categoria).
+    if (_categoria != null &&
+        !(categorias.contains(_categoria) || (_categoria == _semCategoria && semCategoria > 0))) {
+      _categoria = null;
+    }
+    final produtos = [
+      for (final p in store.produtos)
+        if (_categoria == null || p.categoria.trim() == _categoria) p
+    ];
+    final emLista = store.produtosEmLista;
+
+    Widget alternar(IconData icone, String dica, bool lista) {
+      final ativo = emLista == lista;
+      return IconButton(
+        tooltip: dica,
+        isSelected: ativo,
+        style: IconButton.styleFrom(
+          backgroundColor: ativo ? c.realce : Colors.transparent,
+          foregroundColor: ativo ? c.acao : c.tintaSuave,
+        ),
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          store.mudarModoProdutos(lista: lista);
+        },
+        icon: Icon(icone),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Produtos')),
       floatingActionButton: store.produtos.isEmpty
           ? null
           : SizedBox(
               width: 190,
-              child: BotaoPrincipal(
-                  texto: 'Novo produto', icone: Icons.add, onPressed: () => _abrir(context)),
+              child: BotaoPrincipal(texto: 'Novo produto', icone: Icons.add, onPressed: _abrir),
             ),
-      body: Builder(
-        builder: (context) {
-          if (store.produtos.isEmpty) {
-            return Center(
+      body: store.produtos.isEmpty
+          ? Center(
               child: Vazio(
                 icone: Icons.cake_outlined,
                 titulo: 'Seu cardápio começa aqui',
                 texto: 'Cadastre um produto com a receita. O app calcula quanto custa '
                     'cada unidade e sugere o preço.',
                 acao: 'Usar uma receita pronta',
-                onAcao: () => _abrirProntas(context),
+                onAcao: _abrirProntas,
                 acaoSecundaria: 'Cadastrar do zero',
-                onAcaoSecundaria: () => _abrir(context),
+                onAcaoSecundaria: _abrir,
               ),
-            );
-          }
-          final calculos = [for (final p in store.produtos) store.calcular(p)];
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.secao),
-            children: [
-              EntradaSuave(child: _Destaque(calculos: calculos)),
-              const SizedBox(height: Espaco.xl),
-              EntradaSuave(ordem: 1, child: _AtalhoProntas(onTap: () => _abrirProntas(context))),
-              const SizedBox(height: Espaco.l),
-              EntradaSuave(
-                ordem: 2,
-                child: GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  crossAxisCount: 2,
-                  mainAxisSpacing: Espaco.m,
-                  crossAxisSpacing: Espaco.m,
-                  childAspectRatio: 0.8,
-                  children: [
-                    for (final (i, p) in store.produtos.indexed)
-                      _CartaoProduto(p: p, c: calculos[i], onTap: () => _abrir(context, p)),
-                  ],
+            )
+          : ListView(
+              // Espaço no fim para o botão "Novo produto" não cobrir o último.
+              padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, 96),
+              children: [
+                EntradaSuave(
+                  child: _Destaque(calculos: [for (final p in store.produtos) store.calcular(p)]),
                 ),
-              ),
-            ],
-          );
-        },
-      ),
+                const SizedBox(height: Espaco.xl),
+                EntradaSuave(ordem: 1, child: _AtalhoProntas(onTap: _abrirProntas)),
+                if (categorias.isNotEmpty) ...[
+                  const SizedBox(height: Espaco.l),
+                  EntradaSuave(
+                    ordem: 2,
+                    child: _FiltroCategorias(
+                      opcoes: [
+                        (null, 'Todos', store.produtos.length),
+                        for (final cat in categorias)
+                          (
+                            cat,
+                            cat,
+                            store.produtos.where((p) => p.categoria.trim() == cat).length,
+                          ),
+                        if (semCategoria > 0) (_semCategoria, 'Outros', semCategoria),
+                      ],
+                      escolhida: _categoria,
+                      onChanged: (cat) => setState(() => _categoria = cat),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: Espaco.s),
+                EntradaSuave(
+                  ordem: 2,
+                  child: Row(children: [
+                    Expanded(child: Text('Toque no produto para editar', style: t.apoio())),
+                    alternar(Icons.grid_view_rounded, 'Ver em grade', false),
+                    alternar(Icons.view_list_rounded, 'Ver em lista', true),
+                  ]),
+                ),
+                const SizedBox(height: Espaco.s),
+                EntradaSuave(
+                  ordem: 3,
+                  child: AnimatedSwitcher(
+                    duration: Movimento.medio,
+                    // A foto da que está saindo não pode disputar a animação de
+                    // abrir o produto com a que está entrando.
+                    transitionBuilder: (filho, anim) => FadeTransition(
+                      opacity: anim,
+                      child: HeroMode(
+                        enabled: filho.key == ValueKey('$emLista $_categoria'),
+                        child: filho,
+                      ),
+                    ),
+                    child: emLista
+                        ? GrupoLista(
+                            key: ValueKey('$emLista $_categoria'),
+                            recuoDivisoria: 82,
+                            children: [
+                              for (final p in produtos)
+                                _LinhaProduto(p: p, c: store.calcular(p), onTap: () => _abrir(p)),
+                            ],
+                          )
+                        : GridView.count(
+                            key: ValueKey('$emLista $_categoria'),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.zero,
+                            crossAxisCount: 2,
+                            mainAxisSpacing: Espaco.m,
+                            crossAxisSpacing: Espaco.m,
+                            childAspectRatio: 0.68,
+                            children: [
+                              for (final p in produtos)
+                                _CartaoProduto(p: p, c: store.calcular(p), onTap: () => _abrir(p)),
+                            ],
+                          ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -141,7 +232,80 @@ class _Destaque extends StatelessWidget {
   }
 }
 
-/// Produto em cartão: foto grande, margem por cima, nome e preço.
+/// Botões para filtrar por categoria, com quantos produtos tem em cada uma.
+class _FiltroCategorias extends StatelessWidget {
+  final List<(String?, String, int)> opcoes;
+  final String? escolhida;
+  final ValueChanged<String?> onChanged;
+  const _FiltroCategorias({required this.opcoes, required this.escolhida, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: opcoes.length,
+        separatorBuilder: (_, __) => const SizedBox(width: Espaco.s),
+        itemBuilder: (context, i) {
+          final (valor, nome, quantos) = opcoes[i];
+          final ativo = valor == escolhida;
+          return Material(
+            key: ValueKey('categoria $nome'),
+            color: ativo ? c.acao : c.superficie,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(Raio.pequeno),
+              side: BorderSide(color: ativo ? c.acao : c.linha),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(Raio.pequeno),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onChanged(valor);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Espaco.m),
+                child: Center(
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: nome),
+                      TextSpan(
+                        text: '  $quantos',
+                        style: TextStyle(
+                            color: ativo ? c.sobreAcao.withValues(alpha: 0.75) : c.tintaSuave),
+                      ),
+                    ]),
+                    style: t
+                        .corpo(peso: FontWeight.w600, color: ativo ? c.sobreAcao : c.tinta)
+                        .copyWith(fontSize: 14),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Preço, lucro e custo de uma unidade. Sem preço definido, mostra o sugerido.
+({String preco, String? lucro, String custo, Color corLucro, bool sugerido}) _valores(
+    BuildContext context, Calculo c) {
+  final sugerido = c.precoVenda == null;
+  return (
+    preco: reais(c.precoVenda ?? c.precoSugerido),
+    lucro: c.lucroUnitario == null ? null : reais(c.lucroUnitario!),
+    custo: reais(c.custoUnitario),
+    corLucro: corStatus(context, c.status),
+    sugerido: sugerido,
+  );
+}
+
+/// Produto em cartão: foto grande, nome, preço e, embaixo, lucro e custo de
+/// cada unidade.
 class _CartaoProduto extends StatelessWidget {
   final Produto p;
   final Calculo c;
@@ -152,8 +316,8 @@ class _CartaoProduto extends StatelessWidget {
   Widget build(BuildContext context) {
     final cores = context.cores;
     final t = context.tipos;
-    final cor = corStatus(context, c.status);
-    final margem = c.margemReal == null ? null : '${(c.margemReal! * 100).toStringAsFixed(0)}%';
+    final v = _valores(context, c);
+    final pequeno = t.apoio().copyWith(fontSize: 12);
     return Pressionavel(
       child: Material(
         color: cores.superficie,
@@ -166,28 +330,13 @@ class _CartaoProduto extends StatelessWidget {
           onTap: onTap,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Expanded(
-              child: Stack(fit: StackFit.expand, children: [
-                Hero(
-                  tag: 'foto-${p.id}',
-                  child: LayoutBuilder(
-                    builder: (_, caixa) =>
-                        FotoProduto(p.fotoBase64, tamanho: caixa.maxWidth, raio: 0),
-                  ),
+              child: Hero(
+                tag: 'foto-${p.id}',
+                child: LayoutBuilder(
+                  builder: (_, caixa) =>
+                      FotoProduto(p.fotoBase64, tamanho: caixa.maxWidth, raio: 0),
                 ),
-                Positioned(
-                  top: Espaco.s,
-                  right: Espaco.s,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: Espaco.s, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: cores.papel.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(Raio.pequeno),
-                    ),
-                    child: Text(margem ?? textoStatus(c.status),
-                        style: t.valor(size: 12, color: cor, peso: FontWeight.w700)),
-                  ),
-                ),
-              ]),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(Espaco.m, Espaco.s, Espaco.m, Espaco.m),
@@ -197,13 +346,71 @@ class _CartaoProduto extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: t.corpo(peso: FontWeight.w600).copyWith(fontSize: 14)),
                 const SizedBox(height: 2),
-                Text(reais(c.precoVenda ?? c.precoSugerido),
+                Text(v.preco,
                     style: t.valor(
-                        size: 15, color: c.precoVenda == null ? cores.tintaSuave : cores.tinta)),
+                        size: 16,
+                        peso: FontWeight.w700,
+                        color: v.sugerido ? cores.tintaSuave : cores.tinta)),
+                const SizedBox(height: 2),
+                Text(v.lucro == null ? 'preço sugerido' : 'lucro ${v.lucro}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: pequeno.copyWith(
+                        color: v.lucro == null ? null : v.corLucro, fontWeight: FontWeight.w600)),
+                Text('custo ${v.custo}',
+                    maxLines: 1, overflow: TextOverflow.ellipsis, style: pequeno),
               ]),
             ),
           ]),
         ),
+      ),
+    );
+  }
+}
+
+/// Produto em linha: foto, nome e categoria; à direita, preço, lucro e custo.
+class _LinhaProduto extends StatelessWidget {
+  final Produto p;
+  final Calculo c;
+  final VoidCallback onTap;
+  const _LinhaProduto({required this.p, required this.c, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final t = context.tipos;
+    final v = _valores(context, c);
+    final pequeno = t.apoio().copyWith(fontSize: 12);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
+        child: Row(children: [
+          Hero(tag: 'foto-${p.id}', child: FotoProduto(p.fotoBase64, tamanho: 56)),
+          const SizedBox(width: Espaco.m),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(p.nome,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.corpo(peso: FontWeight.w600)),
+              Text(p.categoria.trim().isEmpty ? 'Sem categoria' : p.categoria.trim(),
+                  style: pequeno),
+            ]),
+          ),
+          const SizedBox(width: Espaco.s),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(v.preco,
+                style: t.valor(
+                    size: 16,
+                    peso: FontWeight.w700,
+                    color: v.sugerido ? cores.tintaSuave : cores.tinta)),
+            Text(v.lucro == null ? 'preço sugerido' : 'lucro ${v.lucro}',
+                style: pequeno.copyWith(
+                    color: v.lucro == null ? null : v.corLucro, fontWeight: FontWeight.w600)),
+            Text('custo ${v.custo}', style: pequeno),
+          ]),
+        ]),
       ),
     );
   }
