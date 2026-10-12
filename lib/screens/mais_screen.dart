@@ -6,6 +6,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'ajustes_screen.dart';
+import 'backup_screen.dart';
 import 'insumos_screen.dart';
 import 'lojas_screen.dart';
 import 'receitas_prontas_screen.dart';
@@ -118,6 +119,12 @@ class MaisScreen extends StatelessWidget {
                     'Lojas',
                     lojas == 1 ? '1 loja · criar outra' : '$lojas lojas · trocar ou criar',
                     () => _abrir(context, LojasScreen(store: store)),
+                  ),
+                  item(
+                    Icons.backup_outlined,
+                    'Backup',
+                    'Salvar ou restaurar uma cópia da loja',
+                    () => _abrir(context, BackupScreen(store: store)),
                   ),
                 ]),
               ),

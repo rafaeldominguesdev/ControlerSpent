@@ -181,6 +181,53 @@ class Store extends ChangeNotifier {
     }
   }
 
+  /// Cópia de segurança da loja em uso, em texto, para guardar num arquivo.
+  String exportarLoja() => jsonEncode({
+        'app': 'Controler Spent',
+        'versao': 1,
+        'feitaEm': DateTime.now().toIso8601String(),
+        'loja': {'nome': lojaAtual.nome, 'foto': lojaAtual.fotoBase64},
+        'insumos': [for (final i in insumos) i.toJson()],
+        'produtos': [for (final p in produtos) p.toJson()],
+        'lancamentos': [for (final l in lancamentos) l.toJson()],
+        'ajustes': ajustes.toJson(),
+      });
+
+  /// Lê uma cópia feita por [exportarLoja]. Com [comoNova], cria outra loja com
+  /// esses dados; sem, troca os dados da loja em uso pelos da cópia. Tudo é lido
+  /// antes de mexer em qualquer coisa: se o arquivo estiver errado, nada muda.
+  Future<void> importarLoja(String texto, {required bool comoNova}) async {
+    final j = jsonDecode(texto);
+    if (j is! Map<String, dynamic> || j['app'] != 'Controler Spent' || j['produtos'] is! List) {
+      throw const FormatException('Esse arquivo não é uma cópia do Controler Spent.');
+    }
+    final novosInsumos = [for (final e in j['insumos'] as List) Insumo.fromJson(e)];
+    final novosProdutos = [for (final e in j['produtos'] as List) Produto.fromJson(e)];
+    final novosLancamentos = [for (final e in j['lancamentos'] as List) Lancamento.fromJson(e)]
+      ..sort((a, b) => b.data.compareTo(a.data));
+    final novosAjustes = j['ajustes'] == null ? null : Ajustes.fromJson(j['ajustes']);
+    final info = (j['loja'] as Map?) ?? const {};
+    final nome = (info['nome'] as String?) ?? novosAjustes?.nomeNegocio ?? 'Loja restaurada';
+
+    if (comoNova) await novaLoja(nome);
+    lojaAtual
+      ..nome = nome
+      ..fotoBase64 = info['foto'] as String?;
+    insumos
+      ..clear()
+      ..addAll(novosInsumos);
+    produtos
+      ..clear()
+      ..addAll(novosProdutos);
+    lancamentos
+      ..clear()
+      ..addAll(novosLancamentos);
+    ajustes = (novosAjustes ?? Ajustes())..nomeNegocio = nome;
+    tema.value = ajustes.tema;
+    await _salvarLojas();
+    await _salvar();
+  }
+
   /// O formato antigo "fez 50, vendeu 44" vira produção de 50 + venda de 44 +
   /// perda de 6. O lucro fica igual (o custo dos 50 continua contado).
   bool _separarLotesAntigos() {

@@ -67,4 +67,29 @@ void main() {
     await store.removerLoja(store.lojas.single.id); // a última não pode ser apagada
     expect(store.lojas, hasLength(1));
   });
+
+  test('a cópia de segurança volta igual, como loja nova ou por cima da atual', () async {
+    SharedPreferences.setMockInitialValues({
+      'produtos': jsonEncode([brigadeiro.toJson()]),
+      'lancamentos': jsonEncode([
+        Lancamento.venda(brigadeiro, 100, qtd: 10, preco: 300, pagamento: Pagamento.pix, taxa: 0)
+            .toJson(),
+      ]),
+    });
+    final store = await abrir();
+    final copia = store.exportarLoja();
+
+    await store.importarLoja(copia, comoNova: true);
+    expect(store.lojas, hasLength(2));
+    expect(store.produtos.single.nome, 'Brigadeiro');
+    expect(store.lancamentos.single.vendidos, 10);
+
+    await store.salvarProduto(Produto(nome: 'Extra'));
+    await store.importarLoja(copia, comoNova: false);
+    expect(store.lojas, hasLength(2));
+    expect(store.produtos.map((p) => p.nome), ['Brigadeiro']);
+
+    expect(() => store.importarLoja('{"outro": 1}', comoNova: true), throwsFormatException);
+    expect(store.lojas, hasLength(2)); // arquivo errado não mexe em nada
+  });
 }
