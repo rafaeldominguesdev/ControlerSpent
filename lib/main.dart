@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -101,10 +102,29 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        controller: _paginas,
-        onPageChanged: (i) => setState(() => _aba = i),
-        children: [for (final t in _telas) ManterViva(child: t)],
+      // Com mais de uma loja, as abas das lojas ficam no topo de todas as telas.
+      // A estrutura é sempre a mesma (só a faixa some), para as abas de baixo
+      // não perderem a página em que estão quando a segunda loja é criada.
+      body: ListenableBuilder(
+        listenable: widget.store,
+        builder: (context, paginas) {
+          final varias = widget.store.lojas.length > 1;
+          return Column(children: [
+            _AbasLojas(store: widget.store),
+            Expanded(
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: varias,
+                child: paginas!,
+              ),
+            ),
+          ]);
+        },
+        child: PageView(
+          controller: _paginas,
+          onPageChanged: (i) => setState(() => _aba = i),
+          children: [for (final t in _telas) ManterViva(child: t)],
+        ),
       ),
       bottomNavigationBar: NavAnimada(
         controller: _paginas,
@@ -117,6 +137,75 @@ class _HomeState extends State<Home> {
           ItemNav(Icons.storefront_outlined, Icons.storefront, 'Produtos'),
           ItemNav(Icons.more_horiz, Icons.more_horiz, 'Mais'),
         ],
+      ),
+    );
+  }
+}
+
+/// As lojas em abas, no alto do app; um toque troca de loja. Só aparece quando
+/// existe mais de uma.
+class _AbasLojas extends StatelessWidget {
+  final Store store;
+  const _AbasLojas({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    if (store.lojas.length < 2) return const SizedBox.shrink();
+    final c = context.cores;
+    final t = context.tipos;
+    final atual = store.lojaAtual.id;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: c.papel,
+        border: Border(bottom: BorderSide(color: c.linha)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 46,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: Espaco.borda - Espaco.s),
+            children: [
+              for (final l in store.lojas)
+                InkWell(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    store.trocarLoja(l.id);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Espaco.s),
+                    // O traço embaixo tem a largura do nome da loja.
+                    child: IntrinsicWidth(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        Expanded(
+                          child: Row(children: [
+                            if (l.fotoBase64 != null) ...[
+                              AvatarLoja(l, tamanho: 22),
+                              const SizedBox(width: Espaco.s),
+                            ],
+                            Text(
+                              l.nome,
+                              style: t.corpo(
+                                peso: l.id == atual ? FontWeight.w700 : FontWeight.w500,
+                                color: l.id == atual ? c.tinta : c.tintaSuave,
+                              ),
+                            ),
+                          ]),
+                        ),
+                        AnimatedContainer(
+                          duration: Movimento.medio,
+                          curve: Movimento.entrada,
+                          height: 3,
+                          color: l.id == atual ? c.acao : Colors.transparent,
+                        ),
+                      ]),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
