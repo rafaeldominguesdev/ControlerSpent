@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'ajustes_screen.dart';
 import 'insumos_screen.dart';
+import 'lojas_screen.dart';
 import 'receitas_prontas_screen.dart';
 
 /// Aba "Mais": cadastros e configurações, o que se usa menos no dia a dia. As
@@ -34,6 +35,7 @@ class MaisScreen extends StatelessWidget {
           for (final p in Pagamento.values)
             if (a.taxa(p) > 0) '${p.label.toLowerCase()} ${fmtNum(a.taxa(p) * 100)}%'
         ];
+        final lojas = store.lojas.length;
 
         Widget item(IconData icone, String titulo, String apoio, VoidCallback onTap) => ListTile(
               minVerticalPadding: Espaco.m,
@@ -110,6 +112,12 @@ class MaisScreen extends StatelessWidget {
                     'Taxas da maquininha',
                     taxas.isEmpty ? 'Nenhuma taxa' : taxas.join(' · '),
                     () => _abrir(context, TaxasScreen(store: store)),
+                  ),
+                  item(
+                    Icons.storefront_outlined,
+                    'Lojas',
+                    lojas == 1 ? '1 loja · criar outra' : '$lojas lojas · trocar ou criar',
+                    () => _abrir(context, LojasScreen(store: store)),
                   ),
                 ]),
               ),
