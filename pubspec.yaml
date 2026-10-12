@@ -1,7 +1,7 @@
 name: confeitaria
 description: Precificação e controle para confeitaria.
 publish_to: 'none'
-version: 0.11.1+14
+version: 0.15.0+18
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
