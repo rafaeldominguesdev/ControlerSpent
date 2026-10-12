@@ -419,7 +419,8 @@ class Vazio extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: BoxDecoration(color: context.cores.realce, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+                color: context.cores.realce, borderRadius: BorderRadius.circular(Raio.medio)),
             child: Icon(icone, color: context.cores.acao, size: 24),
           ),
           const SizedBox(height: Espaco.l),

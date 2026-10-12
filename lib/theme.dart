@@ -147,8 +147,9 @@ abstract class Espaco {
   static const borda = 16.0; // margem lateral das telas
 }
 
+/// Cantos discretos: arredondado só o bastante para não ficar duro.
 abstract class Raio {
-  static const pequeno = 10.0, medio = 14.0, grande = 20.0;
+  static const pequeno = 6.0, medio = 10.0, grande = 14.0;
 }
 
 abstract class Movimento {
@@ -343,6 +344,11 @@ ThemeData temaApp(Cores p, Brightness brilho) {
       highlightElevation: 0,
       extendedTextStyle: t.corpo(peso: FontWeight.w600),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.medio)),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.pequeno)),
+      ),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
