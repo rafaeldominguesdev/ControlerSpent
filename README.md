@@ -71,11 +71,27 @@ foto.
 Ficam na aba Mais, em partes: loja (nome e logo), contas do mês (salário e contas fixas), taxas
 da maquininha por forma de pagamento, lojas e backup.
 
-## Regra de contas
+## Como as contas são feitas
 
-O custo dos ingredientes entra no lucro quando o produto é **vendido** (só o que foi vendido)
-ou **perdido**. A produção não entra no lucro: ela alimenta o estoque. Valores em dinheiro são
-guardados em centavos para não haver erro de arredondamento.
+A lógica é a mesma da planilha:
+
+| O quê | Conta |
+| --- | --- |
+| Custo de 1 g, 1 ml ou 1 unidade | preço do pacote ÷ quantidade do pacote |
+| Custo da receita | soma de cada ingrediente × quanto vai na receita |
+| Custo de uma unidade | custo da receita ÷ quantas unidades ela rende |
+| Preço sugerido | custo de uma unidade ÷ (1 − margem desejada) |
+| Lucro de uma venda | valor vendido − custo do que foi vendido − taxa da maquininha |
+
+E algumas regras para o lucro não enganar:
+
+- O custo entra no lucro quando o produto é **vendido** (só o que foi vendido) ou **perdido**.
+  A produção não entra no lucro: ela vira estoque, os "prontos para vender".
+- O estoque de um produto conta a partir da primeira produção registrada dele.
+- As contas fixas (gás, luz, internet…) e o salário ficam no fim do relatório: o lucro do mês
+  menos essas contas mostra quanto sobra ou quanto ainda falta. No mês em andamento, o que
+  falta não é prejuízo: ainda dá tempo de vender.
+- Dinheiro é guardado em centavos, em números inteiros, para não haver erro de arredondamento.
 
 ## Rodando
 
