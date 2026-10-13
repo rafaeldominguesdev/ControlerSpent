@@ -104,16 +104,28 @@ E algumas regras para o lucro não enganar:
 - Para trocar de celular, inclusive de iPhone para Android: salvar a cópia no aparelho antigo
   e restaurar no novo.
 
-## Rodando
+## Rodando o projeto
+
+Precisa do [Flutter](https://flutter.dev) com Dart 3.
 
 ```sh
 flutter pub get
-flutter run                                  # celular ou simulador conectado
-flutter run --dart-define=EXEMPLO=true       # abre com uma confeitaria de exemplo
-flutter test                                 # testes de cálculo e de produção
+flutter run                              # no celular ou simulador conectado
+flutter run --dart-define=EXEMPLO=true   # abre com uma confeitaria de exemplo
 ```
 
-Prints das telas no simulador:
+### Testes
+
+```sh
+flutter test
+```
+
+Os testes cobrem o cálculo de custo e preço, a leitura de números no jeito brasileiro
+("1.000", "7,50"), a regra de produção e estoque, as lojas (dados separados e a migração dos
+dados de antes das lojas) e o backup.
+
+Para tirar prints de todas as telas no simulador (com o app desinstalado antes, para ele abrir
+com os dados de exemplo):
 
 ```sh
 flutter drive --driver=test_driver/integration_test.dart \
@@ -122,15 +134,23 @@ flutter drive --driver=test_driver/integration_test.dart \
 
 Os prints ficam em `build/prints/`.
 
-## Instalando no iPhone
+### No iPhone
 
-Com uma conta Apple gratuita o app vale por 7 dias; depois é só instalar de novo (os dados
-continuam):
+Com uma conta Apple gratuita, o app vale por 7 dias; depois é só instalar de novo, e os dados
+continuam:
 
 ```sh
 flutter build ios --release
 xcrun devicectl device install app --device <UDID> build/ios/iphoneos/Runner.app
 ```
+
+### No Android
+
+```sh
+flutter build apk --release
+```
+
+O APK fica em `build/app/outputs/flutter-apk/app-release.apk`.
 
 ## Estrutura
 
