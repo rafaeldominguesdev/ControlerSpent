@@ -152,12 +152,41 @@ flutter build apk --release
 
 O APK fica em `build/app/outputs/flutter-apk/app-release.apk`.
 
-## Estrutura
+## Por dentro
 
-- `lib/models.dart`: ingredientes, produtos, cálculo, vendas/produção/perdas e resumo do mês
-- `lib/store.dart`: armazenamento local, estoque e formatação de dinheiro
-- `lib/theme.dart`: cores, espaçamentos, movimento e tipografia
-- `lib/widgets.dart`: componentes compartilhados
-- `lib/screens/`: telas
-- `assets/logo/`: logo (SVG e degradê), ícone e abertura; os tamanhos saem de
-  `dart run flutter_launcher_icons` e `dart run flutter_native_splash:create`
+### Tecnologias
+
+- Flutter e Dart 3, com Material 3
+- `shared_preferences`: os dados, em JSON, no próprio aparelho
+- `google_fonts`: Newsreader nos títulos e números grandes, Figtree no resto
+- `animations` (troca de telas), `image_picker` (fotos) e `intl` (datas e reais em pt-BR)
+- `share_plus`, `file_picker` e `path_provider`: o backup
+- `flutter_launcher_icons` e `flutter_native_splash`: o ícone e a tela de abertura
+
+### Estrutura
+
+```text
+lib/
+  main.dart               abas do app (e as abas das lojas no topo)
+  abertura.dart           animação de abertura
+  models.dart             ingredientes, produtos, cálculo, vendas, produção, perdas, lojas
+  store.dart              dados por loja, estoque, backup e formatação de dinheiro
+  theme.dart              cores, espaçamentos, cantos, movimento e tipografia
+  widgets.dart            componentes compartilhados
+  exemplo.dart            confeitaria de exemplo (--dart-define=EXEMPLO=true)
+  receitas_prontas.dart   as receitas prontas
+  screens/                as telas
+test/                     testes de cálculo, produção, lojas e backup
+integration_test/         tour de prints das telas
+assets/logo/              logo em SVG, degradê e PNGs do ícone e da abertura
+tool/degrade_logo.py      gera o degradê em malha da logo
+```
+
+### Visual
+
+- A logo são três barras azul-marinho sobre um degradê em malha com as cores da marca
+  (`tool/degrade_logo.py`). O ícone e a tela de abertura saem dela com
+  `dart run flutter_launcher_icons` e `dart run flutter_native_splash:create`.
+- O app inteiro é no azul da logo, por enquanto só no tema claro. Dinheiro entrando aparece
+  sempre em verde.
+- Ao abrir, o degradê da logo se forma na tela, o nome aparece e o app entra com um zoom.
