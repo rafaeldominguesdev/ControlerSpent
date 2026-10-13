@@ -93,6 +93,17 @@ E algumas regras para o lucro não enganar:
   falta não é prejuízo: ainda dá tempo de vender.
 - Dinheiro é guardado em centavos, em números inteiros, para não haver erro de arredondamento.
 
+## Seus dados
+
+- Tudo fica no próprio celular: não tem conta, servidor nem internet.
+- Cada loja guarda os seus dados separados das outras.
+- Em **Mais → Backup**, "Salvar uma cópia" gera um arquivo `.json` da loja e abre o menu de
+  compartilhar do celular (Arquivos, WhatsApp, e-mail). "Restaurar uma cópia" lê esse arquivo
+  e pergunta se ele vira uma loja nova ou se substitui os dados da loja atual; um arquivo que
+  não é uma cópia do app não muda nada.
+- Para trocar de celular, inclusive de iPhone para Android: salvar a cópia no aparelho antigo
+  e restaurar no novo.
+
 ## Rodando
 
 ```sh
