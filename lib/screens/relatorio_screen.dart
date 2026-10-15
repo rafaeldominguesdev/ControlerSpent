@@ -17,6 +17,7 @@ import 'ajustes_screen.dart';
 
 final _mesNome = DateFormat('MMMM', 'pt_BR');
 final _mesCurto = DateFormat('MMM', 'pt_BR');
+final _diaMes = DateFormat("d MMM", 'pt_BR');
 final _semCentavos = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0);
 
 String _listaNomes(List<String> nomes) => switch (nomes.length) {
