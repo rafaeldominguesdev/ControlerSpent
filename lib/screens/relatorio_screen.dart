@@ -606,10 +606,80 @@ class _GraficoState extends State<_Grafico> {
           ]),
         ]),
       ),
-      const SizedBox(height: Espaco.s),
-      Text(ateDia == null ? 'Comparado a $nome.' : 'Comparado a $nome até o dia $ateDia.',
-          style: t.apoio().copyWith(fontSize: 12)),
-    ]);
+    );
+  }
+}
+
+/// Quanto entrou em cada forma de pagamento: barra dividida e a lista.
+class _Pagamentos extends StatelessWidget {
+  final List<Lancamento> lancamentos;
+  const _Pagamentos({required this.lancamentos});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final soma = <String, double>{};
+    for (final l in lancamentos) {
+      if (l.tipo == TipoLancamento.producao || l.faturamento <= 0) continue;
+      final nome = l.pagamento?.label ?? 'Não informado';
+      soma[nome] = (soma[nome] ?? 0) + l.faturamento;
+    }
+    final total = soma.values.fold(0.0, (a, b) => a + b);
+    if (total <= 0) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(Espaco.l),
+          child: Text('Nenhuma venda no período.', style: t.apoio()),
+        ),
+      );
+    }
+    final itens = soma.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    Color cor(int i) => c.grafico[i % c.grafico.length];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Espaco.l),
+        child: Column(children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: SizedBox(
+              height: 10,
+              child: Row(children: [
+                for (final (i, e) in itens.indexed)
+                  Expanded(
+                    flex: math.max(1, (e.value / total * 1000).round()),
+                    child: Container(
+                      color: cor(i),
+                      margin: EdgeInsets.only(right: i == itens.length - 1 ? 0 : 2),
+                    ),
+                  ),
+              ]),
+            ),
+          ),
+          const SizedBox(height: Espaco.m),
+          for (final (i, e) in itens.indexed)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(color: cor(i), borderRadius: BorderRadius.circular(3)),
+                ),
+                const SizedBox(width: Espaco.s),
+                Expanded(child: Text(e.key, style: t.corpo().copyWith(fontSize: 14))),
+                Text('${(e.value / total * 100).round()}%', style: t.apoio()),
+                SizedBox(
+                  width: MediaQuery.textScalerOf(context).scale(84),
+                  child:
+                      Text(_reais0(e.value), textAlign: TextAlign.right, style: t.valor(size: 14)),
+                ),
+              ]),
+            ),
+        ]),
+      ),
+    );
   }
 }
 
