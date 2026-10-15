@@ -732,20 +732,54 @@ class _Tabela extends StatelessWidget {
               Text('Vendas', style: cabeca), Text('Lucro', style: cabeca),
               padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.s)),
         ),
-      ),
-      _Contas(r: r, emAndamento: emAndamento, onAjustes: onAjustes),
-    ];
-
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Card(
-        clipBehavior: Clip.antiAlias,
-        child: AnimatedSize(
-          duration: Movimento.medio,
-          curve: Movimento.entrada,
-          alignment: Alignment.topCenter,
-          child: AnimatedSwitcher(
-            duration: Movimento.medio,
-            child: Column(key: ValueKey(mes), children: linhas),
+        if (produtos.isEmpty)
+          Padding(
+            padding: respiro,
+            child: Text('Nada vendido no período.', style: t.apoio()),
+          ),
+        for (final (i, p) in produtos.indexed) ...[
+          if (i > 0) const Divider(indent: Espaco.l + 30 + Espaco.s, endIndent: Espaco.l),
+          fileira(
+            Row(children: [
+              FotoProduto(fotos[p.id], tamanho: 30),
+              const SizedBox(width: Espaco.s),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(p.nome,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.corpo().copyWith(fontSize: 14, height: 1.2)),
+                  const SizedBox(height: 4),
+                  // Barrinha: quanto este produto vendeu perto do campeão.
+                  FractionallySizedBox(
+                    widthFactor: maior <= 0 ? 0 : (p.faturamento / maior).clamp(0.02, 1.0),
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: c.dinheiro.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+            ]),
+            Text('${p.vendidos}', style: numero),
+            Text(_reais0(p.faturamento), style: numero),
+            Text(_reais0(p.lucro),
+                style: p.lucro < 0 ? numero.copyWith(color: c.negativo) : numero),
+          ),
+        ],
+        // Total com o traço de cima mais forte, como numa conta feita no papel.
+        DecoratedBox(
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: c.tinta, width: 1.2))),
+          child: fileira(
+            Text('Total', style: t.corpo(peso: FontWeight.w700).copyWith(fontSize: 15)),
+            Text('${r.vendidos}', style: forte),
+            Text(_reais0(r.faturamento), style: forte),
+            Text(_reais0(r.lucroBolso),
+                style: forte.copyWith(color: r.lucroBolso < 0 ? c.negativo : c.positivo)),
           ),
         ),
       ),
