@@ -76,10 +76,27 @@ class RelatorioScreen extends StatefulWidget {
   State<RelatorioScreen> createState() => _RelatorioScreenState();
 }
 
-class _RelatorioScreenState extends State<RelatorioScreen> with TickerProviderStateMixin {
-  DateTime _mes = DateTime(DateTime.now().year, DateTime.now().month);
-  List<DateTime> _meses = const [];
-  TabController? _abas;
+class _RelatorioScreenState extends State<RelatorioScreen> {
+  _Tipo _tipo = _Tipo.mes;
+  DateTime _ref = _hoje(); // um dia dentro do período mostrado
+  DateTimeRange? _personalizado;
+  final _foto = GlobalKey();
+  bool _enviando = false;
+
+  _Faixa _faixa(_Tipo tipo, DateTime ref) => switch (tipo) {
+        _Tipo.semana => (
+            ini: DateTime(ref.year, ref.month, ref.day - (ref.weekday - 1)),
+            fim: DateTime(ref.year, ref.month, ref.day - (ref.weekday - 1) + 7),
+          ),
+        _Tipo.mes => (ini: DateTime(ref.year, ref.month), fim: DateTime(ref.year, ref.month + 1)),
+        _Tipo.ano => (ini: DateTime(ref.year), fim: DateTime(ref.year + 1)),
+        _Tipo.outro => (
+            ini: DateTime(
+                _personalizado!.start.year, _personalizado!.start.month, _personalizado!.start.day),
+            fim: DateTime(
+                _personalizado!.end.year, _personalizado!.end.month, _personalizado!.end.day + 1),
+          ),
+      };
 
   @override
   void dispose() {
