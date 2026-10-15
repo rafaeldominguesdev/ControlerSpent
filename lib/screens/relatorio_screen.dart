@@ -287,7 +287,11 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
                 ? _Contas(r: r, emAndamento: emAndamento, onAjustes: _abrirAjustes)
                 : null,
           ),
+          const SizedBox(height: Espaco.s),
+          Text('Lucro: o que sobra das vendas depois de ingredientes, embalagens, taxas e perdas.',
+              style: t.apoio().copyWith(fontSize: 12)),
         ];
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Relatório'),
