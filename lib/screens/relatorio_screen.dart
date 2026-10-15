@@ -449,15 +449,15 @@ class _Destaques extends StatelessWidget {
             ),
             comparacao(atual.pedidos.toDouble(), antes.pedidos.toDouble()),
           ),
-          divisoria,
-          linha(
-            Icons.trending_up_rounded,
-            c.positivo,
+          divisaoV,
+          mini(
+              'Ticket médio', Text(_reais0(ticket), style: medio), comparacao(ticket, ticketAntes)),
+          divisaoV,
+          mini(
             'Lucro',
-            ValorAnimado(atual.lucro,
-                doZero: true,
-                style: grande.copyWith(color: atual.lucro < 0 ? c.negativo : c.positivo)),
-            comparacao(atual.lucro, antes.lucro, semBase: 'sem lucro em $curto'),
+            Text(_reais0(atual.lucro),
+                style: medio.copyWith(color: atual.lucro < 0 ? c.negativo : c.tinta)),
+            comparacao(atual.lucro, antes.lucro),
           ),
         ]),
       ),
