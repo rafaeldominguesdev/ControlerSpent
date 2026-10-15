@@ -70,8 +70,8 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final _paginas = PageController(initialPage: 1); // abre em Vendas
-  int _aba = 1;
+  final _paginas = PageController(initialPage: 0); // abre em Relatório
+  int _aba = 0;
 
   late final List<Widget> _telas = [
     RelatorioScreen(store: widget.store),
