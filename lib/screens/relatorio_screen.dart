@@ -368,22 +368,14 @@ class _Seta extends StatelessWidget {
 /// Vendas em destaque e, embaixo, pedidos, ticket médio e lucro lado a lado.
 class _Destaques extends StatelessWidget {
   final _Numeros atual, antes;
-  final DateTime mesAnterior;
-  final int? ateDia;
-  const _Topo({
-    required this.atual,
-    required this.antes,
-    required this.mesAnterior,
-    required this.ateDia,
-  });
+  final String nomeAnterior;
+  const _Destaques({required this.atual, required this.antes, required this.nomeAnterior});
 
   @override
   Widget build(BuildContext context) {
     final c = context.cores;
     final t = context.tipos;
-    final curto = _mesCurto.format(mesAnterior).replaceAll('.', '');
-    final apoio = t.apoio().copyWith(fontSize: 13);
-    final grande = t.display(size: 38);
+    final apoio = t.apoio().copyWith(fontSize: 12);
 
     Widget comparacao(double agora, double antes, {required String semBase}) {
       if (antes <= 0) return Text(agora > 0 ? semBase : '—', style: apoio);
