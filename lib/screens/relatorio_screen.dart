@@ -130,7 +130,32 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
       });
       return;
     }
-    return [for (var m = inicio; !m.isAfter(atual); m = DateTime(m.year, m.month + 1)) m];
+    final hoje = _hoje();
+    final escolhido = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: hoje,
+      initialDateRange: _personalizado ??
+          DateTimeRange(start: DateTime(hoje.year, hoje.month, hoje.day - 29), end: hoje),
+      helpText: 'Escolha o período',
+      saveText: 'Ver',
+    );
+    if (escolhido == null) return;
+    setState(() {
+      _personalizado = escolhido;
+      _tipo = _Tipo.outro;
+    });
+  }
+
+  String _titulo(_Faixa f) {
+    final ultimo = DateTime(f.fim.year, f.fim.month, f.fim.day - 1);
+    return switch (_tipo) {
+      _Tipo.mes => '${_cap(_mesNome.format(f.ini))} ${f.ini.year}',
+      _Tipo.ano => '${f.ini.year}',
+      _ => f.ini.year == ultimo.year && f.ini.year == DateTime.now().year
+          ? '${_dia(f.ini)} – ${_dia(ultimo)}'
+          : '${_dia(f.ini)} ${f.ini.year} – ${_dia(ultimo)} ${ultimo.year}',
+    };
   }
 
   /// Recria as abas só quando a lista de meses muda (virou o mês ou apareceu
