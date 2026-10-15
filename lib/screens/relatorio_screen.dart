@@ -272,7 +272,14 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
             antes: antes,
             nomeAnterior: _nomeAnterior(ant),
           ),
-          titulo('Por produto'),
+          secao('Vendas', apoio: _tipo == _Tipo.ano ? 'por mês' : 'por dia'),
+          _Grafico(
+              lancamentos: doPeriodo,
+              faixa: faixa,
+              porMes: _tipo == _Tipo.ano || _dias(faixa) > 62),
+          secao('Formas de pagamento'),
+          _Pagamentos(lancamentos: doPeriodo),
+          secao('Por produto'),
           _Tabela(
             r: r,
             mes: mes,
