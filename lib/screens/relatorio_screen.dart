@@ -246,12 +246,31 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
             );
 
         final blocos = <Widget>[
-          _Topo(
-            atual: _numeros(store, mes),
-            antes: _numeros(store, anterior,
-                ate: ateDia == null ? null : math.min(ateDia, diasAnterior)),
-            mesAnterior: anterior,
-            ateDia: ateDia,
+          // Período: nome grande com setas, como virar a página do caderno.
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(store.lojaAtual.nome.toUpperCase(),
+                    style: t.rotulo().copyWith(fontSize: 11, letterSpacing: 1.1)),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(titulo, style: t.tituloTela()),
+                ),
+              ]),
+            ),
+            if (_tipo != _Tipo.outro) ...[
+              _Seta(Icons.chevron_left_rounded, 'Período anterior', () => _andar(-1)),
+              _Seta(Icons.chevron_right_rounded, 'Próximo período',
+                  podeAvancar ? () => _andar(1) : null),
+            ],
+          ]),
+          const SizedBox(height: Espaco.l),
+          _Destaques(
+            atual: atual,
+            antes: antes,
+            nomeAnterior: _nomeAnterior(ant),
           ),
           titulo('Por produto'),
           _Tabela(
