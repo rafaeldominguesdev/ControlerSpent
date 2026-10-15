@@ -377,19 +377,24 @@ class _Destaques extends StatelessWidget {
     final t = context.tipos;
     final apoio = t.apoio().copyWith(fontSize: 12);
 
-    Widget comparacao(double agora, double antes, {required String semBase}) {
-      if (antes <= 0) return Text(agora > 0 ? semBase : '—', style: apoio);
+    Widget comparacao(double agora, double antes) {
+      if (antes <= 0) return Text(agora > 0 ? 'novo' : '—', style: apoio);
       final pct = ((agora - antes) / antes * 100).round();
-      if (pct == 0) return Text('igual a $curto', style: apoio);
+      if (pct == 0) return Text('igual', style: apoio);
       final sobe = pct > 0;
       final cor = sobe ? c.positivo : c.negativo;
-      return Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(sobe ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-            size: 16, color: cor),
-        const SizedBox(width: 2),
-        Text('${pct.abs()}%', style: t.valor(size: 14, color: cor, peso: FontWeight.w700)),
-        Text(' que $curto', style: apoio),
-      ]);
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(sobe ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+              size: 13, color: cor),
+          Text('${pct.abs()}%', style: t.valor(size: 12, color: cor, peso: FontWeight.w700)),
+        ]),
+      );
     }
 
     Widget linha(IconData icone, Color cor, String rotulo, Widget numero, Widget comparar) =>
