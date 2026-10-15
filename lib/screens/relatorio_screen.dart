@@ -422,47 +422,24 @@ class _Destaques extends StatelessWidget {
         Container(
           color: c.dinheiroSuave,
           padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.l, Espaco.l, Espaco.l),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: cor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(Raio.pequeno),
-              ),
-              child: Icon(icone, color: cor, size: 22),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Text('Vendas', style: t.rotulo(color: c.positivo))),
+              comparacao(atual.vendas, antes.vendas),
+            ]),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: ValorAnimado(atual.vendas,
+                  doZero: true, style: t.display(size: 40, color: c.positivo)),
             ),
-            const SizedBox(width: Espaco.m),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(child: Text(rotulo, style: t.corpo(color: c.tintaSuave))),
-                  comparar,
-                ]),
-                const SizedBox(height: 2),
-                FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: numero),
-              ]),
-            ),
+            const SizedBox(height: 2),
+            Text('comparado a $nomeAnterior', style: apoio),
           ]),
-        );
-
-    // Os fios começam depois do ícone, como numa lista.
-    const divisoria = Divider(indent: Espaco.l + 42 + Espaco.m, endIndent: Espaco.l);
-    final nome = _mesNome.format(mesAnterior);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Card(
-        child: Column(children: [
-          linha(
-            Icons.payments_outlined,
-            c.acao,
-            'Vendas',
-            ValorAnimado(atual.vendas, doZero: true, style: grande),
-            comparacao(atual.vendas, antes.vendas, semBase: 'sem vendas em $curto'),
-          ),
-          divisoria,
-          linha(
-            Icons.receipt_long_outlined,
-            c.destaque,
+        ),
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          mini(
             'Pedidos',
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: atual.pedidos.toDouble()),
