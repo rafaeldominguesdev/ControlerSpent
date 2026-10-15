@@ -684,20 +684,12 @@ class _Pagamentos extends StatelessWidget {
 }
 
 /// A tabela por produto (quantidade, vendas e lucro), como na planilha, com o
-/// total e as contas do mês no fim.
+/// total e, no mês, as contas fixas no fim.
 class _Tabela extends StatelessWidget {
   final ResumoMes r;
-  final DateTime mes;
   final Map<int, String?> fotos;
-  final bool emAndamento;
-  final VoidCallback onAjustes;
-  const _Tabela({
-    required this.r,
-    required this.mes,
-    required this.fotos,
-    required this.emAndamento,
-    required this.onAjustes,
-  });
+  final Widget? contas;
+  const _Tabela({required this.r, required this.fotos, this.contas});
 
   @override
   Widget build(BuildContext context) {
