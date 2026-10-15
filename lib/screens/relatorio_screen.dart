@@ -718,49 +718,19 @@ class _Tabela extends StatelessWidget {
         );
 
     final produtos = r.porProduto()
-      ..sort((a, b) => b.vendidos != a.vendidos
-          ? b.vendidos.compareTo(a.vendidos)
-          : b.faturamento.compareTo(a.faturamento));
+      ..sort((a, b) => b.faturamento != a.faturamento
+          ? b.faturamento.compareTo(a.faturamento)
+          : b.vendidos.compareTo(a.vendidos));
+    final maior = produtos.fold(0.0, (m, p) => math.max(m, p.faturamento));
 
-    final linhas = <Widget>[
-      ColoredBox(
-        color: c.realce,
-        child: fileira(Text('Produto', style: cabeca), Text('Qtd', style: cabeca),
-            Text('Vendas', style: cabeca), Text('Lucro', style: cabeca),
-            padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.s)),
-      ),
-      if (produtos.isEmpty)
-        Padding(
-          padding: respiro,
-          child: Text('Nada vendido em ${_mesNome.format(mes)}.', style: t.apoio()),
-        ),
-      for (final (i, p) in produtos.indexed) ...[
-        if (i > 0) const Divider(indent: Espaco.l + 30 + Espaco.s, endIndent: Espaco.l),
-        fileira(
-          Row(children: [
-            FotoProduto(fotos[p.id], tamanho: 30),
-            const SizedBox(width: Espaco.s),
-            Expanded(
-              child: Text(p.nome,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: t.corpo().copyWith(fontSize: 14, height: 1.2)),
-            ),
-          ]),
-          Text('${p.vendidos}', style: numero),
-          Text(_reais0(p.faturamento), style: numero),
-          Text(_reais0(p.lucro), style: p.lucro < 0 ? numero.copyWith(color: c.negativo) : numero),
-        ),
-      ],
-      // Total com o traço de cima mais forte, como numa conta feita no papel.
-      DecoratedBox(
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: c.tinta, width: 1.2))),
-        child: fileira(
-          Text('Total', style: t.corpo(peso: FontWeight.w700).copyWith(fontSize: 15)),
-          Text('${r.vendidos}', style: forte),
-          Text(_reais0(r.faturamento), style: forte),
-          Text(_reais0(r.lucroBolso),
-              style: forte.copyWith(color: r.lucroBolso < 0 ? c.negativo : c.positivo)),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: [
+        ColoredBox(
+          color: c.realce,
+          child: fileira(Text('Produto', style: cabeca), Text('Qtd', style: cabeca),
+              Text('Vendas', style: cabeca), Text('Lucro', style: cabeca),
+              padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.s)),
         ),
       ),
       _Contas(r: r, emAndamento: emAndamento, onAjustes: onAjustes),
