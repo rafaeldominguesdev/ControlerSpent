@@ -204,14 +204,40 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
       builder: (context, _) {
         final c = context.cores;
         final t = context.tipos;
-        final mes = _mes;
-        final r = store.resumo(mes.year, mes.month);
-        final anterior = DateTime(mes.year, mes.month - 1);
-        final diasAnterior = DateUtils.getDaysInMonth(anterior.year, anterior.month);
-        // No mês em andamento, compara com o mês passado até o mesmo dia.
-        final ateDia = _emAndamento(mes) ? DateTime.now().day : null;
+        final faixa = _faixa(_tipo, _ref);
+        final hoje = _hoje();
+        final emAndamento = _dentro(hoje, faixa);
 
-        Widget titulo(String s) => Padding(
+        // No período em andamento, compara com o anterior só até o mesmo ponto.
+        final ant = _anterior(faixa);
+        final decorridos = emAndamento ? _dias((ini: faixa.ini, fim: hoje)) + 1 : null;
+        final antCorte = decorridos == null
+            ? ant
+            : _tipo == _Tipo.mes
+                ? (
+                    ini: ant.ini,
+                    fim: DateTime(
+                        ant.ini.year,
+                        ant.ini.month,
+                        math.min(hoje.day, DateUtils.getDaysInMonth(ant.ini.year, ant.ini.month)) +
+                            1),
+                  )
+                : (
+                    ini: ant.ini,
+                    fim: DateTime(ant.ini.year, ant.ini.month, ant.ini.day + decorridos)
+                  );
+
+        final doPeriodo = [
+          for (final l in store.lancamentos)
+            if (_dentro(l.data, faixa)) l
+        ];
+        final r = ResumoMes(doPeriodo, store.ajustes);
+        final atual = _numeros(doPeriodo);
+        final antes = _numeros(store.lancamentos.where((l) => _dentro(l.data, antCorte)));
+        final titulo = _titulo(faixa);
+        final podeAvancar = _tipo != _Tipo.outro && !faixa.fim.isAfter(hoje);
+
+        Widget secao(String s, {String? apoio}) => Padding(
               padding: const EdgeInsets.only(top: Espaco.xxl, bottom: Espaco.m),
               child: Text(s, style: t.secao()),
             );
