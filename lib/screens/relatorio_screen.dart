@@ -295,11 +295,31 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Relatório'),
-            bottom: TabBar(
-              controller: _abas,
-              isScrollable: true,
-              onTap: (i) => setState(() => _mes = _meses[i]),
-              tabs: [for (final m in _meses) Tab(text: _rotuloAba(m))],
+            actions: [
+              IconButton(
+                tooltip: 'Enviar como imagem',
+                onPressed: _enviando ? null : () => _compartilhar(titulo),
+                icon: _enviando
+                    ? const SizedBox(
+                        width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.ios_share_rounded),
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(Espaco.borda, 0, Espaco.borda, Espaco.s),
+                child: SeletorOpcoes<_Tipo>(
+                  opcoes: const [
+                    (_Tipo.semana, 'Semana'),
+                    (_Tipo.mes, 'Mês'),
+                    (_Tipo.ano, 'Ano'),
+                    (_Tipo.outro, 'Outro'),
+                  ],
+                  valor: _tipo,
+                  onChanged: _escolherTipo,
+                ),
+              ),
             ),
           ),
           body: ListView(
