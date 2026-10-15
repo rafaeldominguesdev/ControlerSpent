@@ -322,11 +322,24 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
               ),
             ),
           ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(Espaco.borda, Espaco.l, Espaco.borda, Espaco.secao),
-            children: [
-              for (final (i, b) in blocos.indexed) EntradaSuave(ordem: i, child: b),
-            ],
+          body: SingleChildScrollView(
+            child: RepaintBoundary(
+              key: _foto,
+              child: ColoredBox(
+                color: c.papel,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(Espaco.borda, Espaco.l, Espaco.borda, Espaco.secao),
+                  child: Column(
+                    key: ValueKey((_tipo, faixa.ini)),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final (i, b) in blocos.indexed) EntradaSuave(ordem: i, child: b),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         );
       },
