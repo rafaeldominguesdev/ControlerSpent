@@ -282,10 +282,10 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
           secao('Por produto'),
           _Tabela(
             r: r,
-            mes: mes,
             fotos: {for (final p in store.produtos) p.id: p.fotoBase64},
-            emAndamento: ateDia != null,
-            onAjustes: _abrirAjustes,
+            contas: _tipo == _Tipo.mes
+                ? _Contas(r: r, emAndamento: emAndamento, onAjustes: _abrirAjustes)
+                : null,
           ),
         ];
         return Scaffold(
