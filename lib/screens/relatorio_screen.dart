@@ -26,18 +26,9 @@ String _listaNomes(List<String> nomes) => switch (nomes.length) {
       _ => '${nomes.sublist(0, nomes.length - 1).join(', ')} e ${nomes.last}',
     };
 
-bool _emAndamento(DateTime mes) {
-  final hoje = DateTime.now();
-  return mes.year == hoje.year && mes.month == hoje.month;
-}
-
 String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
-/// "Out" nas abas; "Dez 2025" quando o mês é de outro ano.
-String _rotuloAba(DateTime m) {
-  final curto = _cap(_mesCurto.format(m).replaceAll('.', ''));
-  return m.year == DateTime.now().year ? curto : '$curto ${m.year}';
-}
+String _curto(DateTime d) => _mesCurto.format(d).replaceAll('.', '');
+String _dia(DateTime d) => _diaMes.format(d).replaceAll('.', '');
 
 /// "R$ 1.528", sem centavos (para caber na tabela e no topo).
 String _reais0(double centavos) => centavos <= -50
