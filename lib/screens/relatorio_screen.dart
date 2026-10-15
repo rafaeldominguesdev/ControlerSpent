@@ -122,14 +122,13 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
         });
   }
 
-  /// Do primeiro mês com anotação (mostrando pelo menos 6 meses) até o mês atual.
-  List<DateTime> _mesesDasAbas() {
-    final hoje = DateTime.now();
-    final atual = DateTime(hoje.year, hoje.month);
-    var inicio = DateTime(hoje.year, hoje.month - 5);
-    for (final l in widget.store.lancamentos) {
-      final m = DateTime(l.data.year, l.data.month);
-      if (m.isBefore(inicio)) inicio = m;
+  Future<void> _escolherTipo(_Tipo tipo) async {
+    if (tipo != _Tipo.outro) {
+      setState(() {
+        _tipo = tipo;
+        _ref = _hoje();
+      });
+      return;
     }
     return [for (var m = inicio; !m.isAfter(atual); m = DateTime(m.year, m.month + 1)) m];
   }
