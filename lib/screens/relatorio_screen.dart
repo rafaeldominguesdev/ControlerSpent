@@ -202,7 +202,7 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
     return ListenableBuilder(
       listenable: store,
       builder: (context, _) {
-        _atualizarAbas();
+        final c = context.cores;
         final t = context.tipos;
         final mes = _mes;
         final r = store.resumo(mes.year, mes.month);
