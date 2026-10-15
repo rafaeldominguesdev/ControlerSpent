@@ -64,9 +64,10 @@ _Numeros _numeros(Iterable<Lancamento> ls) {
   return (vendas: vendas, pedidos: pedidos, lucro: lucro);
 }
 
-/// O relatório do mês, no jeito de um painel de loja: vendas, pedidos e lucro
-/// em destaque, comparados com o mês passado, e a tabela por produto, com as
-/// contas do mês no fim.
+/// O relatório de um período (semana, mês, ano ou um intervalo escolhido):
+/// números em destaque comparados com o período anterior, o gráfico das
+/// vendas, as formas de pagamento e a tabela por produto. Pode ser enviado
+/// como imagem.
 class RelatorioScreen extends StatefulWidget {
   final Store store;
   const RelatorioScreen({super.key, required this.store});
