@@ -782,11 +782,9 @@ class _Tabela extends StatelessWidget {
                 style: forte.copyWith(color: r.lucroBolso < 0 ? c.negativo : c.positivo)),
           ),
         ),
-      ),
-      const SizedBox(height: Espaco.s),
-      Text('Lucro: o que sobra das vendas depois de ingredientes, embalagens, taxas e perdas.',
-          style: t.apoio().copyWith(fontSize: 12)),
-    ]);
+        if (contas != null) contas!,
+      ]),
+    );
   }
 }
 
