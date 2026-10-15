@@ -98,10 +98,28 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
           ),
       };
 
-  @override
-  void dispose() {
-    _abas?.dispose();
-    super.dispose();
+  /// O período de mesmo tamanho logo antes.
+  _Faixa _anterior(_Faixa f) => switch (_tipo) {
+        _Tipo.semana => (
+            ini: DateTime(f.ini.year, f.ini.month, f.ini.day - 7),
+            fim: f.ini,
+          ),
+        _Tipo.mes => (ini: DateTime(f.ini.year, f.ini.month - 1), fim: f.ini),
+        _Tipo.ano => (ini: DateTime(f.ini.year - 1), fim: f.ini),
+        _Tipo.outro => (
+            ini: DateTime(f.ini.year, f.ini.month, f.ini.day - _dias(f)),
+            fim: f.ini,
+          ),
+      };
+
+  void _andar(int passo) {
+    HapticFeedback.selectionClick();
+    setState(() => _ref = switch (_tipo) {
+          _Tipo.semana => DateTime(_ref.year, _ref.month, _ref.day + 7 * passo),
+          _Tipo.mes => DateTime(_ref.year, _ref.month + passo),
+          _Tipo.ano => DateTime(_ref.year + passo),
+          _Tipo.outro => _ref,
+        });
   }
 
   /// Do primeiro mês com anotação (mostrando pelo menos 6 meses) até o mês atual.
