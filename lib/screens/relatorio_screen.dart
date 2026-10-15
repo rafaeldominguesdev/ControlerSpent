@@ -52,13 +52,10 @@ int _dias(_Faixa f) => DateTime.utc(f.fim.year, f.fim.month, f.fim.day)
 
 typedef _Numeros = ({double vendas, int pedidos, double lucro});
 
-/// Vendas, pedidos e lucro de um mês; com [ate], só até aquele dia.
-_Numeros _numeros(Store store, DateTime mes, {int? ate}) {
+_Numeros _numeros(Iterable<Lancamento> ls) {
   var vendas = 0.0, lucro = 0.0;
   var pedidos = 0;
-  for (final l in store.lancamentos) {
-    if (l.data.year != mes.year || l.data.month != mes.month) continue;
-    if (ate != null && l.data.day > ate) continue;
+  for (final l in ls) {
     if (l.tipo == TipoLancamento.producao) continue; // produção não entra no lucro
     vendas += l.faturamento;
     lucro += l.lucro;
