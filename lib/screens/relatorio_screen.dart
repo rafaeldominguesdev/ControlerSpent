@@ -239,8 +239,12 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
 
         Widget secao(String s, {String? apoio}) => Padding(
               padding: const EdgeInsets.only(top: Espaco.xxl, bottom: Espaco.m),
-              child: Text(s, style: t.secao()),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Expanded(child: Text(s, style: t.secao())),
+                if (apoio != null) Text(apoio, style: t.apoio().copyWith(fontSize: 12)),
+              ]),
             );
+
         final blocos = <Widget>[
           _Topo(
             atual: _numeros(store, mes),
