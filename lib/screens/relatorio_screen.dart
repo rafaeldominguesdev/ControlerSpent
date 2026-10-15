@@ -347,9 +347,26 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
   }
 }
 
-/// Vendas, pedidos e lucro em destaque: grandes, um embaixo do outro, cada um
-/// com a setinha que compara com o mês passado.
-class _Topo extends StatelessWidget {
+class _Seta extends StatelessWidget {
+  final IconData icone;
+  final String dica;
+  final VoidCallback? onTap;
+  const _Seta(this.icone, this.dica, this.onTap);
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: dica,
+        onPressed: onTap,
+        icon: Icon(icone, size: 28),
+        style: IconButton.styleFrom(
+          backgroundColor: onTap == null ? null : context.cores.superficie,
+          side: BorderSide(color: context.cores.linha),
+        ),
+      );
+}
+
+/// Vendas em destaque e, embaixo, pedidos, ticket médio e lucro lado a lado.
+class _Destaques extends StatelessWidget {
   final _Numeros atual, antes;
   final DateTime mesAnterior;
   final int? ateDia;
