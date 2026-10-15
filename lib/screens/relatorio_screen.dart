@@ -158,17 +158,39 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
     };
   }
 
-  /// Recria as abas só quando a lista de meses muda (virou o mês ou apareceu
-  /// uma anotação mais antiga).
-  void _atualizarAbas() {
-    final meses = _mesesDasAbas();
-    if (_abas != null && meses.length == _meses.length && meses.first == _meses.first) return;
-    if (!meses.contains(_mes)) _mes = meses.last;
-    final antigas = _abas;
-    _meses = meses;
-    _abas = TabController(length: meses.length, vsync: this, initialIndex: meses.indexOf(_mes));
-    // A barra de abas ainda usa as antigas até o fim deste quadro.
-    if (antigas != null) WidgetsBinding.instance.addPostFrameCallback((_) => antigas.dispose());
+  String _nomeAnterior(_Faixa f) => switch (_tipo) {
+        _Tipo.semana => 'semana passada',
+        _Tipo.mes => _curto(f.ini),
+        _Tipo.ano => '${f.ini.year}',
+        _Tipo.outro => 'período anterior',
+      };
+
+  Future<void> _compartilhar(String titulo) async {
+    final contexto = _foto.currentContext;
+    if (contexto == null || _enviando) return;
+    final origem = context.findRenderObject() as RenderBox?;
+    setState(() => _enviando = true);
+    try {
+      final caixa = contexto.findRenderObject()! as RenderRepaintBoundary;
+      final imagem = await caixa.toImage(pixelRatio: 3);
+      final bytes = await imagem.toByteData(format: ui.ImageByteFormat.png);
+      final pasta = await getTemporaryDirectory();
+      final arquivo = File('${pasta.path}/relatorio.png');
+      await arquivo.writeAsBytes(bytes!.buffer.asUint8List());
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(arquivo.path, mimeType: 'image/png')],
+        text: 'Relatório ${widget.store.lojaAtual.nome} · $titulo',
+        sharePositionOrigin:
+            origem == null ? null : origem.localToGlobal(Offset.zero) & origem.size,
+      ));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Não deu para gerar a imagem. Tente de novo.')));
+      }
+    } finally {
+      if (mounted) setState(() => _enviando = false);
+    }
   }
 
   void _abrirAjustes() =>
