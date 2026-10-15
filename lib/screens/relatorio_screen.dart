@@ -35,6 +35,21 @@ String _reais0(double centavos) => centavos <= -50
     ? '−${_semCentavos.format(-centavos / 100)}'
     : _semCentavos.format(math.max(0.0, centavos) / 100);
 
+DateTime _hoje() {
+  final n = DateTime.now();
+  return DateTime(n.year, n.month, n.day);
+}
+
+enum _Tipo { semana, mes, ano, outro }
+
+/// Um intervalo [ini, fim) de dias inteiros.
+typedef _Faixa = ({DateTime ini, DateTime fim});
+
+bool _dentro(DateTime d, _Faixa f) => !d.isBefore(f.ini) && d.isBefore(f.fim);
+int _dias(_Faixa f) => DateTime.utc(f.fim.year, f.fim.month, f.fim.day)
+    .difference(DateTime.utc(f.ini.year, f.ini.month, f.ini.day))
+    .inDays;
+
 typedef _Numeros = ({double vendas, int pedidos, double lucro});
 
 /// Vendas, pedidos e lucro de um mês; com [ate], só até aquele dia.
