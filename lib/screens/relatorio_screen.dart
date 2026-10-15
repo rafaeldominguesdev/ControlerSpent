@@ -460,6 +460,151 @@ class _Destaques extends StatelessWidget {
             comparacao(atual.lucro, antes.lucro),
           ),
         ]),
+      ]),
+    );
+  }
+}
+
+/// Barras das vendas por dia (ou por mês). Tocar numa barra mostra o valor.
+class _Grafico extends StatefulWidget {
+  final List<Lancamento> lancamentos;
+  final _Faixa faixa;
+  final bool porMes;
+  const _Grafico({required this.lancamentos, required this.faixa, required this.porMes});
+
+  @override
+  State<_Grafico> createState() => _GraficoState();
+}
+
+class _GraficoState extends State<_Grafico> {
+  int? _tocado;
+
+  @override
+  void didUpdateWidget(_Grafico old) {
+    super.didUpdateWidget(old);
+    if (old.faixa != widget.faixa) _tocado = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    final f = widget.faixa;
+
+    final datas = <DateTime>[];
+    if (widget.porMes) {
+      for (var m = DateTime(f.ini.year, f.ini.month);
+          m.isBefore(f.fim);
+          m = DateTime(m.year, m.month + 1)) {
+        datas.add(m);
+      }
+    } else {
+      for (var i = 0; i < _dias(f); i++) {
+        datas.add(DateTime(f.ini.year, f.ini.month, f.ini.day + i));
+      }
+    }
+    final valores = List<double>.filled(datas.length, 0);
+    for (final l in widget.lancamentos) {
+      if (l.tipo == TipoLancamento.producao) continue;
+      final i = widget.porMes
+          ? (l.data.year - datas.first.year) * 12 + l.data.month - datas.first.month
+          : _dias((ini: f.ini, fim: DateTime(l.data.year, l.data.month, l.data.day)));
+      if (i >= 0 && i < valores.length) valores[i] += l.faturamento;
+    }
+    final maximo = valores.fold(0.0, math.max);
+    final melhor = maximo <= 0 ? null : valores.indexOf(maximo);
+    final hoje = _hoje();
+
+    String nomeDe(DateTime d) => widget.porMes
+        ? _cap(_mesNome.format(d))
+        : _cap(DateFormat('EEE, d MMM', 'pt_BR').format(d).replaceAll('.', ''));
+    String eixo(DateTime d) => widget.porMes
+        ? _cap(_curto(d)).substring(0, 1)
+        : datas.length <= 7
+            ? _cap(DateFormat('EEE', 'pt_BR').format(d).replaceAll('.', '')).substring(0, 3)
+            : '${d.day}';
+    // Em meses, rótulo de 5 em 5 dias para não amontoar.
+    bool mostraEixo(int i) => datas.length <= 14 || i == 0 || (i + 1) % 5 == 0;
+
+    final sel = _tocado ?? melhor;
+    final cabecalho = sel == null
+        ? Text('Sem vendas no período', style: t.apoio())
+        : Row(children: [
+            Expanded(
+              child: Text(
+                _tocado == null
+                    ? (widget.porMes ? 'Melhor mês · ' : 'Melhor dia · ') + nomeDe(datas[sel])
+                    : nomeDe(datas[sel]),
+                style: t.apoio(),
+              ),
+            ),
+            Text(_reais0(valores[sel]), style: t.valor(size: 15, peso: FontWeight.w700)),
+          ]);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.l, Espaco.l, Espaco.m),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          cabecalho,
+          const SizedBox(height: Espaco.l),
+          SizedBox(
+            height: 130,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              for (final (i, v) in valores.indexed)
+                Expanded(
+                  child: Semantics(
+                    label: '${nomeDe(datas[i])}: ${_reais0(v)}',
+                    button: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _tocado = _tocado == i ? null : i);
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: datas.length > 20 ? 1.5 : 4),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: maximo <= 0 ? 0 : v / maximo),
+                            duration: Movimento.lento,
+                            curve: Movimento.entrada,
+                            builder: (_, k, __) => Container(
+                              height: math.max(3, 130 * k),
+                              decoration: BoxDecoration(
+                                color: v <= 0
+                                    ? c.realce
+                                    : (i == sel ? c.dinheiro : c.dinheiro.withValues(alpha: 0.45)),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ]),
+          ),
+          const SizedBox(height: Espaco.xs),
+          Row(children: [
+            for (final (i, d) in datas.indexed)
+              Expanded(
+                child: Text(
+                  mostraEixo(i) ? eixo(d) : '',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.visible,
+                  softWrap: false,
+                  style: t.apoio().copyWith(
+                        fontSize: 10,
+                        fontWeight: !widget.porMes && d == hoje ? FontWeight.w700 : null,
+                        color: !widget.porMes && d == hoje ? c.tinta : null,
+                      ),
+                ),
+              ),
+          ]),
+        ]),
       ),
       const SizedBox(height: Espaco.s),
       Text(ateDia == null ? 'Comparado a $nome.' : 'Comparado a $nome até o dia $ateDia.',
