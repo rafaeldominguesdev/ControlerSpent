@@ -397,8 +397,30 @@ class _Destaques extends StatelessWidget {
       );
     }
 
-    Widget linha(IconData icone, Color cor, String rotulo, Widget numero, Widget comparar) =>
-        Padding(
+    final ticket = atual.pedidos == 0 ? 0.0 : atual.vendas / atual.pedidos;
+    final ticketAntes = antes.pedidos == 0 ? 0.0 : antes.vendas / antes.pedidos;
+
+    Widget mini(String rotulo, Widget valor, Widget comparar) => Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.m, Espaco.s, Espaco.l),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(rotulo, style: t.rotulo().copyWith(fontSize: 12)),
+              const SizedBox(height: 4),
+              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: valor),
+              const SizedBox(height: 6),
+              comparar,
+            ]),
+          ),
+        );
+
+    final medio = t.valor(size: 19, peso: FontWeight.w700);
+    final divisaoV = Container(width: 1, height: 56, color: c.linha);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Container(
+          color: c.dinheiroSuave,
           padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.l, Espaco.l, Espaco.l),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
