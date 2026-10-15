@@ -445,10 +445,9 @@ class _Destaques extends StatelessWidget {
               tween: Tween(begin: 0, end: atual.pedidos.toDouble()),
               duration: const Duration(milliseconds: 600),
               curve: Movimento.entrada,
-              builder: (_, v, __) => Text('${v.round()}', style: grande),
+              builder: (_, v, __) => Text('${v.round()}', style: medio),
             ),
-            comparacao(atual.pedidos.toDouble(), antes.pedidos.toDouble(),
-                semBase: 'sem pedidos em $curto'),
+            comparacao(atual.pedidos.toDouble(), antes.pedidos.toDouble()),
           ),
           divisoria,
           linha(
