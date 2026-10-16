@@ -57,6 +57,7 @@ class Store extends ChangeNotifier {
   final List<Insumo> insumos = [];
   final List<Produto> produtos = [];
   final List<Lancamento> lancamentos = [];
+  final List<Encomenda> encomendas = [];
   Ajustes ajustes = Ajustes();
 
   /// Separado do resto para o app só trocar o tema quando ele muda.
@@ -66,6 +67,7 @@ class Store extends ChangeNotifier {
   static const _kLancamentos = 'lancamentos';
   static const _kAjustes = 'ajustes';
   static const _kVendasEmLista = 'vendasEmLista';
+  static const _kEncomendas = 'encomendas';
 
   Map<int, Insumo> get insumosPorId => {for (final i in insumos) i.id: i};
 
@@ -73,7 +75,7 @@ class Store extends ChangeNotifier {
 
   Loja get lojaAtual => lojas.firstWhere((l) => l.id == _lojaAtualId);
 
-  static const _dadosDaLoja = [_kInsumos, _kProdutos, _kLancamentos, _kAjustes];
+  static const _dadosDaLoja = [_kInsumos, _kProdutos, _kLancamentos, _kAjustes, _kEncomendas];
 
   /// Chave de um dado da loja em uso: "produtos_1".
   String _chave(String base) => '${base}_$_lojaAtualId';
@@ -116,6 +118,7 @@ class Store extends ChangeNotifier {
     insumos.clear();
     produtos.clear();
     lancamentos.clear();
+    encomendas.clear();
     final i = _prefs.getString(_chave(_kInsumos));
     final p = _prefs.getString(_chave(_kProdutos));
     if (i != null) {
@@ -127,6 +130,10 @@ class Store extends ChangeNotifier {
     final l = _prefs.getString(_chave(_kLancamentos));
     if (l != null) {
       lancamentos.addAll((jsonDecode(l) as List).map((e) => Lancamento.fromJson(e)));
+    }
+    final en = _prefs.getString(_chave(_kEncomendas));
+    if (en != null) {
+      encomendas.addAll((jsonDecode(en) as List).map((e) => Encomenda.fromJson(e)));
     }
     final a = _prefs.getString(_chave(_kAjustes));
     ajustes = a == null ? Ajustes(nomeNegocio: lojaAtual.nome) : Ajustes.fromJson(jsonDecode(a));
@@ -198,6 +205,7 @@ class Store extends ChangeNotifier {
         'insumos': [for (final i in insumos) i.toJson()],
         'produtos': [for (final p in produtos) p.toJson()],
         'lancamentos': [for (final l in lancamentos) l.toJson()],
+        'encomendas': [for (final e in encomendas) e.toJson()],
         'ajustes': ajustes.toJson(),
       });
 
@@ -213,6 +221,9 @@ class Store extends ChangeNotifier {
     final novosProdutos = [for (final e in j['produtos'] as List) Produto.fromJson(e)];
     final novosLancamentos = [for (final e in j['lancamentos'] as List) Lancamento.fromJson(e)]
       ..sort((a, b) => b.data.compareTo(a.data));
+    final novasEncomendas = [
+      for (final e in (j['encomendas'] as List? ?? const [])) Encomenda.fromJson(e)
+    ];
     final novosAjustes = j['ajustes'] == null ? null : Ajustes.fromJson(j['ajustes']);
     final info = (j['loja'] as Map?) ?? const {};
     final nome = (info['nome'] as String?) ?? novosAjustes?.nomeNegocio ?? 'Loja restaurada';
@@ -230,6 +241,9 @@ class Store extends ChangeNotifier {
     lancamentos
       ..clear()
       ..addAll(novosLancamentos);
+    encomendas
+      ..clear()
+      ..addAll(novasEncomendas);
     ajustes = (novosAjustes ?? Ajustes())..nomeNegocio = nome;
     tema.value = ajustes.tema;
     await _salvarLojas();
@@ -333,7 +347,49 @@ class Store extends ChangeNotifier {
     await _prefs.setString(_chave(_kInsumos), jsonEncode(insumos.map((e) => e.toJson()).toList()));
     await _prefs.setString(
         _chave(_kProdutos), jsonEncode(produtos.map((e) => e.toJson()).toList()));
+    await _prefs.setString(
+        _chave(_kEncomendas), jsonEncode(encomendas.map((e) => e.toJson()).toList()));
     notifyListeners();
+  }
+
+  // ---- Encomendas ----
+
+  Future<void> salvarEncomenda(Encomenda nova) {
+    final idx = encomendas.indexWhere((e) => e.id == nova.id);
+    idx >= 0 ? encomendas[idx] = nova : encomendas.add(nova);
+    encomendas.sort((a, b) => a.entrega.compareTo(b.entrega));
+    return _salvar();
+  }
+
+  Future<void> removerEncomenda(Encomenda e) {
+    encomendas.removeWhere((x) => x.id == e.id);
+    return _salvar();
+  }
+
+  /// Entregou: cada item vira uma venda (com o custo de hoje e a taxa da forma
+  /// de pagamento), e aí entra no relatório.
+  Future<void> entregarEncomenda(Encomenda e, Pagamento pagamento) async {
+    final porId = {for (final p in produtos) p.id: p};
+    for (final it in e.itens) {
+      final p = porId[it.produtoId];
+      lancamentos.add(Lancamento(
+        produtoId: it.produtoId,
+        produtoNome: it.produtoNome,
+        data: DateTime.now(),
+        feitos: it.qtd,
+        vendidos: it.qtd,
+        precoUnitCentavos: it.precoUnitCentavos,
+        custoUnitCentavos: p == null ? 0 : calcular(p).custoUnitario,
+        taxaPct: ajustes.taxa(pagamento),
+        tipo: TipoLancamento.venda,
+        pagamento: pagamento,
+        cliente: e.cliente.trim().isEmpty ? null : e.cliente.trim(),
+        obs: 'Encomenda',
+      ));
+    }
+    lancamentos.sort((a, b) => b.data.compareTo(a.data));
+    e.status = StatusEncomenda.entregue;
+    await _salvar();
   }
 
   Future<void> salvarInsumo(Insumo novo) {
