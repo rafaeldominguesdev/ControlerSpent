@@ -5,9 +5,10 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'encomendas_screen.dart';
 import 'lancar.dart';
 
-enum _Parte { vender, historico }
+enum _Parte { vender, encomendas, historico }
 
 /// O preço que vai na venda (o mesmo que o registro rápido usa).
 int _preco(Store store, Produto p) =>
@@ -40,6 +41,7 @@ class _VendasScreenState extends State<VendasScreen> {
         final deHoje = vendas.where((l) => mesmoDia(l.data, hoje));
         final vendidoHoje = deHoje.fold(0.0, (s, l) => s + l.faturamento);
         final lucroHoje = deHoje.fold(0.0, (s, l) => s + l.lucro);
+        final abertas = store.encomendas.where((e) => e.status == StatusEncomenda.aberta).length;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Vendas')),
@@ -62,7 +64,14 @@ class _VendasScreenState extends State<VendasScreen> {
               EntradaSuave(
                 ordem: 1,
                 child: SeletorOpcoes<_Parte>(
-                  opcoes: const [(_Parte.vender, 'Vender'), (_Parte.historico, 'Histórico')],
+                  opcoes: [
+                    (_Parte.vender, 'Vender'),
+                    (
+                      _Parte.encomendas,
+                      abertas == 0 ? 'Encomendas' : 'Encomendas ($abertas)',
+                    ),
+                    (_Parte.historico, 'Histórico'),
+                  ],
                   valor: _parte,
                   onChanged: (p) => setState(() => _parte = p),
                 ),
@@ -76,9 +85,13 @@ class _VendasScreenState extends State<VendasScreen> {
                   alignment: Alignment.topCenter,
                   children: [...anteriores, if (atual != null) atual],
                 ),
-                child: _parte == _Parte.vender
-                    ? _Vender(key: const ValueKey('vender'), store: store)
-                    : _Historico(key: const ValueKey('historico'), store: store, vendas: vendas),
+                child: switch (_parte) {
+                  _Parte.vender => _Vender(key: const ValueKey('vender'), store: store),
+                  _Parte.encomendas =>
+                    ListaEncomendas(key: const ValueKey('encomendas'), store: store),
+                  _Parte.historico =>
+                    _Historico(key: const ValueKey('historico'), store: store, vendas: vendas),
+                },
               ),
             ],
           ),
@@ -105,7 +118,8 @@ class _Vender extends StatelessWidget {
         const Vazio(
           icone: Icons.cake_outlined,
           titulo: 'Nenhum produto ainda',
-          texto: 'Cadastre seus produtos na aba Produtos. Depois é só tocar neles aqui para vender.',
+          texto:
+              'Cadastre seus produtos na aba Produtos. Depois é só tocar neles aqui para vender.',
         ),
         BotaoPrincipal(
           texto: 'Registrar venda',
@@ -183,7 +197,9 @@ class _Vender extends StatelessWidget {
                     ),
                     itemCount: produtos.length,
                     itemBuilder: (context, i) => _CartaoVenda(
-                        store: store, p: produtos[i], onVender: () => _vender(context, produtos[i])),
+                        store: store,
+                        p: produtos[i],
+                        onVender: () => _vender(context, produtos[i])),
                   );
                 },
               ),
@@ -218,7 +234,8 @@ class _CartaoVenda extends StatelessWidget {
               aspectRatio: 1,
               child: Stack(fit: StackFit.expand, children: [
                 LayoutBuilder(
-                  builder: (_, caixa) => FotoProduto(p.fotoBase64, tamanho: caixa.maxWidth, raio: 0),
+                  builder: (_, caixa) =>
+                      FotoProduto(p.fotoBase64, tamanho: caixa.maxWidth, raio: 0),
                 ),
                 if (estoque > 0)
                   Positioned(
@@ -281,7 +298,9 @@ class _LinhaVenda extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(p.nome,
-                  maxLines: 1, overflow: TextOverflow.ellipsis, style: t.corpo(peso: FontWeight.w600)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.corpo(peso: FontWeight.w600)),
               Text(
                 [
                   reais(_preco(store, p)),
@@ -333,3 +352,4 @@ class _Historico extends StatelessWidget {
     ]);
   }
 }
+
