@@ -14,6 +14,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   google_fonts: ^9.0.0
+  image_cropper: ^13.0.0
   image_picker: ^1.2.4
   intl: any
   path_provider: ^2.1.6
