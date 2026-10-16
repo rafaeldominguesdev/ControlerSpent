@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models.dart';
 import '../receitas_prontas.dart';
@@ -137,6 +138,17 @@ class MaisScreen extends StatelessWidget {
                   opcoes: [for (final m in TemaApp.values) (m, m.label)],
                   valor: a.tema,
                   onChanged: store.mudarTema,
+                ),
+              ),
+              const SizedBox(height: Espaco.secao),
+              FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (_, info) => Text(
+                  info.hasData
+                      ? 'Controler Spent · versão ${info.data!.version} (${info.data!.buildNumber})'
+                      : '',
+                  textAlign: TextAlign.center,
+                  style: t.apoio().copyWith(fontSize: 12),
                 ),
               ),
             ],
