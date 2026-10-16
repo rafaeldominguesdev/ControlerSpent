@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models.dart';
@@ -68,6 +70,7 @@ class Store extends ChangeNotifier {
   static const _kAjustes = 'ajustes';
   static const _kVendasEmLista = 'vendasEmLista';
   static const _kEncomendas = 'encomendas';
+  static const _kUltimaCopia = 'ultimaCopiaManual';
 
   Map<int, Insumo> get insumosPorId => {for (final i in insumos) i.id: i};
 
@@ -350,6 +353,71 @@ class Store extends ChangeNotifier {
     await _prefs.setString(
         _chave(_kEncomendas), jsonEncode(encomendas.map((e) => e.toJson()).toList()));
     notifyListeners();
+    await _copiaAutomatica();
+  }
+
+  // ---- Cópias automáticas ----
+  //
+  // A cada mudança, a cópia do dia da loja em uso é regravada na pasta do app
+  // (aparece no app Arquivos, em "No meu iPhone"). Ficam as dos últimos 14
+  // dias. Elas protegem de um engano, mas somem se o app for apagado: por
+  // isso o app também lembra de mandar uma cópia para fora do celular.
+
+  static const _diasDeCopia = 14;
+
+  Future<Directory> _pastaCopias() async {
+    final docs = await getApplicationDocumentsDirectory();
+    return Directory('${docs.path}/Copias automaticas').create(recursive: true);
+  }
+
+  String get _prefixoCopia => 'loja$_lojaAtualId-';
+
+  Future<void> _copiaAutomatica() async {
+    try {
+      final pasta = await _pastaCopias();
+      final dia = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      await File('${pasta.path}/$_prefixoCopia$dia.json').writeAsString(exportarLoja());
+      final antigas = (await copiasAutomaticas()).skip(_diasDeCopia);
+      for (final f in antigas) {
+        await f.delete();
+      }
+    } catch (_) {
+      // Uma cópia que falhou não pode atrapalhar o uso do app.
+    }
+  }
+
+  /// Cópias automáticas da loja em uso, da mais nova para a mais antiga.
+  Future<List<File>> copiasAutomaticas() async {
+    try {
+      final pasta = await _pastaCopias();
+      final arquivos = pasta
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.uri.pathSegments.last.startsWith(_prefixoCopia))
+          .toList()
+        ..sort((a, b) => b.path.compareTo(a.path));
+      return arquivos;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Quando foi a última cópia enviada para fora do celular (Arquivos, WhatsApp…).
+  DateTime? get ultimaCopiaManual {
+    final s = _prefs.getString(_kUltimaCopia);
+    return s == null ? null : DateTime.tryParse(s);
+  }
+
+  Future<void> marcarCopiaManual() async {
+    await _prefs.setString(_kUltimaCopia, DateTime.now().toIso8601String());
+    notifyListeners();
+  }
+
+  /// Faz tempo (ou nunca) que uma cópia saiu do celular, e já há o que perder.
+  bool get precisaCopia {
+    if (lancamentos.isEmpty && produtos.isEmpty) return false;
+    final u = ultimaCopiaManual;
+    return u == null || DateTime.now().difference(u).inDays >= 7;
   }
 
   // ---- Encomendas ----
