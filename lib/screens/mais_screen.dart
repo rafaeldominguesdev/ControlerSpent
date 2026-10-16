@@ -128,6 +128,17 @@ class MaisScreen extends StatelessWidget {
                   ),
                 ]),
               ),
+              const SizedBox(height: Espaco.xl),
+              const EntradaSuave(ordem: 3, child: Rotulo('Aparência')),
+              const SizedBox(height: Espaco.s),
+              EntradaSuave(
+                ordem: 3,
+                child: SeletorOpcoes<TemaApp>(
+                  opcoes: [for (final m in TemaApp.values) (m, m.label)],
+                  valor: a.tema,
+                  onChanged: store.mudarTema,
+                ),
+              ),
             ],
           ),
         );
