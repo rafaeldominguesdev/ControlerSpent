@@ -170,13 +170,23 @@ class Tipos {
 
   static const _numeros = [FontFeature.tabularFigures()];
 
-  TextStyle display({double size = 36, Color? color}) => GoogleFonts.newsreader(
+  /// Números grandes (vendas do dia, totais): sem serifa, firmes e alinhados.
+  TextStyle display({double size = 36, Color? color}) => GoogleFonts.inter(
+        fontSize: size,
+        height: 1.05,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -size * 0.035,
+        color: color ?? c.tinta,
+        fontFeatures: _numeros,
+      );
+
+  /// O nome do app na abertura.
+  TextStyle marca({double size = 32, Color? color}) => GoogleFonts.newsreader(
         fontSize: size,
         height: 1.05,
         fontWeight: FontWeight.w500,
         letterSpacing: -0.8,
         color: color ?? c.tinta,
-        fontFeatures: _numeros,
       );
 
   TextStyle tituloTela() => GoogleFonts.newsreader(
@@ -208,8 +218,12 @@ class Tipos {
       GoogleFonts.figtree(fontSize: 13, height: 1.3, color: color ?? c.tintaSuave);
 
   TextStyle valor({double size = 15, Color? color, FontWeight peso = FontWeight.w600}) =>
-      GoogleFonts.figtree(
-          fontSize: size, fontWeight: peso, color: color ?? c.tinta, fontFeatures: _numeros);
+      GoogleFonts.inter(
+          fontSize: size,
+          fontWeight: peso,
+          letterSpacing: -0.2,
+          color: color ?? c.tinta,
+          fontFeatures: _numeros);
 }
 
 extension TemaDoContexto on BuildContext {
