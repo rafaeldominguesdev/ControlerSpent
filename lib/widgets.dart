@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'models.dart';
@@ -748,11 +749,50 @@ Future<String?> pedirFoto(BuildContext context, {required bool temFoto}) async {
   if (escolha is! ImageSource) return null;
   final origem = escolha;
   try {
-    // Reduz a foto para não pesar no aparelho.
+    // Pega a foto maior para o zoom não borrar; o recorte é que fica pequeno.
     final img = await ImagePicker()
-        .pickImage(source: origem, maxWidth: 700, maxHeight: 700, imageQuality: 75);
-    if (img == null) return null;
-    return base64Encode(await img.readAsBytes());
+        .pickImage(source: origem, maxWidth: 2000, maxHeight: 2000, imageQuality: 90);
+    if (img == null || !context.mounted) return null;
+    // Deixa ajeitar: arrastar, dar zoom, girar e escolher a proporção.
+    final cor = context.cores.acao;
+    final recorte = await ImageCropper().cropImage(
+      sourcePath: img.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      maxWidth: 700,
+      maxHeight: 700,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 75,
+      uiSettings: [
+        IOSUiSettings(
+          title: 'Ajustar foto',
+          doneButtonTitle: 'Usar',
+          cancelButtonTitle: 'Cancelar',
+          aspectRatioPresets: [
+            CropAspectRatioPreset.square,
+            CropAspectRatioPreset.ratio4x3,
+            CropAspectRatioPreset.ratio3x2,
+            CropAspectRatioPreset.ratio16x9,
+            CropAspectRatioPreset.original,
+          ],
+        ),
+        AndroidUiSettings(
+          toolbarTitle: 'Ajustar foto',
+          toolbarColor: cor,
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: cor,
+          lockAspectRatio: false,
+          aspectRatioPresets: [
+            CropAspectRatioPreset.square,
+            CropAspectRatioPreset.ratio4x3,
+            CropAspectRatioPreset.ratio3x2,
+            CropAspectRatioPreset.ratio16x9,
+            CropAspectRatioPreset.original,
+          ],
+        ),
+      ],
+    );
+    if (recorte == null) return null;
+    return base64Encode(await recorte.readAsBytes());
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
