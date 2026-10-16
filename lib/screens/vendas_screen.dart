@@ -5,6 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'backup_screen.dart';
 import 'encomendas_screen.dart';
 import 'lancar.dart';
 
@@ -60,6 +61,10 @@ class _VendasScreenState extends State<VendasScreen> {
                           cor: c.positivo, icone: Icons.trending_up),
                 ]),
               ),
+              if (store.precisaCopia) ...[
+                const SizedBox(height: Espaco.l),
+                _LembreteCopia(store: store),
+              ],
               const SizedBox(height: Espaco.xl),
               EntradaSuave(
                 ordem: 1,
@@ -353,3 +358,36 @@ class _Historico extends StatelessWidget {
   }
 }
 
+/// Um lembrete discreto quando faz uma semana (ou nunca) que a cópia não sai
+/// do celular. Some sozinho depois de salvar uma.
+class _LembreteCopia extends StatelessWidget {
+  final Store store;
+  const _LembreteCopia({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final t = context.tipos;
+    return Material(
+      color: c.atencao.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(Raio.medio),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Raio.medio),
+        onTap: () =>
+            Navigator.push(context, MaterialPageRoute(builder: (_) => BackupScreen(store: store))),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.m),
+          child: Row(children: [
+            Icon(Icons.cloud_upload_outlined, color: c.atencao, size: 20),
+            const SizedBox(width: Espaco.m),
+            Expanded(
+              child: Text('Salve uma cópia dos seus dados fora do celular',
+                  style: t.corpo(color: c.atencao).copyWith(fontSize: 14)),
+            ),
+            Icon(Icons.chevron_right, color: c.atencao),
+          ]),
+        ),
+      ),
+    );
+  }
+}

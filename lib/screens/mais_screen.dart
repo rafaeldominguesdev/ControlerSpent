@@ -124,7 +124,9 @@ class MaisScreen extends StatelessWidget {
                   item(
                     Icons.backup_outlined,
                     'Backup',
-                    'Salvar ou restaurar uma cópia da loja',
+                    store.precisaCopia
+                        ? 'Faz tempo que não salva uma cópia'
+                        : 'Salvar ou restaurar uma cópia da loja',
                     () => _abrir(context, BackupScreen(store: store)),
                   ),
                 ]),
