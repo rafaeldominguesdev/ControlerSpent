@@ -123,7 +123,7 @@ class _AberturaState extends State<Abertura> with SingleTickerProviderStateMixin
                                 quanto: 6 * (1 - nome),
                                 child: Text('Controler Spent',
                                     textAlign: TextAlign.center,
-                                    style: t.display(size: 32, color: Marca.marinho)),
+                                    style: t.display(size: 32, color: Colors.white)),
                               ),
                             ),
                           ),
