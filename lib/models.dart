@@ -429,3 +429,86 @@ class ResumoMes {
 }
 
 String? _limpo(String? s) => (s == null || s.trim().isEmpty) ? null : s.trim();
+
+enum StatusEncomenda { aberta, entregue, cancelada }
+
+/// Um item da encomenda: o produto, quantos e por quanto cada.
+class ItemEncomenda {
+  int produtoId;
+  String produtoNome;
+  int qtd;
+  int precoUnitCentavos;
+
+  ItemEncomenda({
+    required this.produtoId,
+    required this.produtoNome,
+    required this.qtd,
+    required this.precoUnitCentavos,
+  });
+
+  int get totalCentavos => qtd * precoUnitCentavos;
+
+  Map<String, dynamic> toJson() => {
+        'produtoId': produtoId,
+        'produtoNome': produtoNome,
+        'qtd': qtd,
+        'preco': precoUnitCentavos,
+      };
+
+  factory ItemEncomenda.fromJson(Map<String, dynamic> j) => ItemEncomenda(
+        produtoId: j['produtoId'],
+        produtoNome: j['produtoNome'],
+        qtd: j['qtd'],
+        precoUnitCentavos: j['preco'],
+      );
+}
+
+/// Pedido para uma data: quem pediu, o que, quando entrega e quanto já pagou
+/// de sinal. Só vira venda (e entra no relatório) quando é entregue.
+class Encomenda {
+  final int id;
+  String cliente;
+  String? telefone;
+  DateTime entrega;
+  List<ItemEncomenda> itens;
+  int sinalCentavos;
+  String? obs;
+  StatusEncomenda status;
+
+  Encomenda({
+    int? id,
+    required this.cliente,
+    this.telefone,
+    required this.entrega,
+    required this.itens,
+    this.sinalCentavos = 0,
+    this.obs,
+    this.status = StatusEncomenda.aberta,
+  }) : id = id ?? _nextId();
+
+  int get totalCentavos => itens.fold(0, (s, i) => s + i.totalCentavos);
+  int get faltaCentavos => (totalCentavos - sinalCentavos).clamp(0, totalCentavos);
+  int get unidades => itens.fold(0, (s, i) => s + i.qtd);
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'cliente': cliente,
+        if (telefone != null) 'telefone': telefone,
+        'entrega': entrega.toIso8601String(),
+        'itens': [for (final i in itens) i.toJson()],
+        'sinal': sinalCentavos,
+        if (obs != null) 'obs': obs,
+        'status': status.name,
+      };
+
+  factory Encomenda.fromJson(Map<String, dynamic> j) => Encomenda(
+        id: j['id'],
+        cliente: j['cliente'] ?? '',
+        telefone: j['telefone'],
+        entrega: DateTime.parse(j['entrega']),
+        itens: [for (final e in (j['itens'] as List? ?? const [])) ItemEncomenda.fromJson(e)],
+        sinalCentavos: j['sinal'] ?? 0,
+        obs: j['obs'],
+        status: StatusEncomenda.values.asNameMap()[j['status']] ?? StatusEncomenda.aberta,
+      );
+}
